@@ -5,12 +5,22 @@ use App\Models\Country;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+//use App\Http\Controllers\BaseController as BaseController;
 
 
 class CountryController extends Controller
 {
     //
+    // function __construct(Request $request) {
+       
+    //     return parent::__construct($request);
+        
+    // }
+
     public function list(Request $request){
+
+        //return $this->checkTenant($request);
+
         try {   
             $pageSize = $request->pageSize;
             $pageNum = $request->pageNum;
