@@ -5,12 +5,22 @@ use App\Models\Country;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+//use App\Http\Controllers\BaseController as BaseController;
 
 
 class CountryController extends Controller
 {
     //
+    // function __construct(Request $request) {
+       
+    //     return parent::__construct($request);
+        
+    // }
+
     public function list(Request $request){
+
+        //return $this->checkTenant($request);
+
         try {   
             $pageSize = $request->pageSize;
             $pageNum = $request->pageNum;
@@ -126,21 +136,31 @@ class CountryController extends Controller
 
             if($country->count()>0)
             {
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' =>  $country
+                // return response()->json([
+                //     'responseCode' => '0000', 
+                //     'responseDesc' => 'OK',
+                //     'data' =>  $country
                     
-                ]);
+                // ]);
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                     "data" => $country
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             else
             {
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' =>  $country
+                // return response()->json([
+                //     'responseCode' => '0400', 
+                //     'responseDesc' => 'Data Not Found',
+                //     'data' =>  $country
                     
-                ]);
+                // ]);
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"Data Not Found'",
+                    "data" => $country
+                    ]; 
+                return $this->headerResponse($a,$request);
             }
             
         }
