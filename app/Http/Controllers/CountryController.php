@@ -136,21 +136,31 @@ class CountryController extends Controller
 
             if($country->count()>0)
             {
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' =>  $country
+                // return response()->json([
+                //     'responseCode' => '0000', 
+                //     'responseDesc' => 'OK',
+                //     'data' =>  $country
                     
-                ]);
+                // ]);
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                     "data" => $country
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             else
             {
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' =>  $country
+                // return response()->json([
+                //     'responseCode' => '0400', 
+                //     'responseDesc' => 'Data Not Found',
+                //     'data' =>  $country
                     
-                ]);
+                // ]);
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"Data Not Found'",
+                    "data" => $country
+                    ]; 
+                return $this->headerResponse($a,$request);
             }
             
         }
