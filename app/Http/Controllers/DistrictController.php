@@ -5,7 +5,7 @@ use App\Models\District;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\DB;
 
 class DistrictController extends Controller
 {
@@ -15,47 +15,51 @@ class DistrictController extends Controller
 
                 $pageSize = $request->pageSize;
                 $pageNum = $request->pageNum;
-                $city_id = $request->city_id;
+                $city_id = $request->cityId;
                 $name = $request->name;
-                $query = District::query()
+                $query = District::select('id','name','city_id','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdateBy','update_ts as lastUpdatedTime')
                     ->with(['city' => function ($query) {
                         $query->select('id', 'name');
                     }]);
                 if($request->city_id != '')
                 {
-                    $query->where('city_id', $request->city_id);
+                    $query->where('city_id','ILIKE','%' . $request->cityId . '%');
                 }
                 if($request->name != '')
                 {
-                    $query->where('name', $request->name);
+                    $query->where('name', 'ILIKE','%' . $request->name . '%');
                 }
 
                 $count = $query->get()->count();
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
-                ->limit($pageSize)->orderBy('name', 'ASC')->get();
+                ->limit($pageSize)->orderBy('name', 'ASC')->get()->makeHidden(['city_id']);
                 
                 if($count > 0)
                 {
-                    return response()->json(['responseCode' => '0000', 
-                                        'responseDesc' => 'OK',
-                                        'pageSize'  =>  $pageSize,
-                                        'totalPage' => ceil($count/$pageSize),
-                                        'total' => $count,
-                                        'rows' => $results
-                                    ]);
+                    $a=['responseCode' => '0000', 
+                        'responseDesc' => "OK",
+                        'pageSize'  =>  $pageSize,
+                        'totalPage' => ceil($count/$pageSize),
+                        'total' => $count,
+                        'rows' => $results
+                        ];    
+                        return $this->listResponse($a,$request);
                 }
                 else
                 {
-                    return response()->json(['responseCode' => '0400', 
-                                        'responseDesc' => 'Data Not Found',
-                                        'rows' => $results
-                                        
-                                    ]);
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
                 }
                 
         } catch (\Exception $e) {
-            return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
+            $a=["responseCode"=>"3333",
+            "responseDesc"=>$e->getMessage()
+            ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
@@ -69,11 +73,15 @@ class DistrictController extends Controller
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors(),
+                
+                ];    
+            return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
 
             $district = new District();
@@ -82,15 +90,21 @@ class DistrictController extends Controller
             $district->city_id = $request->city_id;
 
             if ($district->save()) {
-                return response()->json(['responseCode' => '0000', //sukses insert
-                                          'responseDesc' => 'District created successfully',
-                                          
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                    "generatedId" =>  $district->id
+                    ];    
+            return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', //gagal exception 
-                                     'responseDesc' => $e->getMessage()
-                                    ]);
+            DB::rollBack();
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
         }
 
     }
@@ -105,11 +119,14 @@ class DistrictController extends Controller
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
 
             $district = District::where([
@@ -122,49 +139,61 @@ class DistrictController extends Controller
             $district->name = $request->name;
             
             if ($district->save()) {
-                return response()->json(['responseCode' => '0000', //sukses update
-                                          'responseDesc' => 'District updated successfully',
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK"
+                    ];    
+                return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => "District Update Failure"]);
+            DB::rollback();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
     
     public function show(Request $request){
         try {
-            $district = District::where('id', $request->id)->with(['city' => function ($query) {
+            $district = District::select('id','name','version','city_id','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+            ->where('id', $request->id)->with(['city' => function ($query) {
                 $query->select('id', 'name');
-            }])->get();
+            }])->get()->makeHidden(['city_id']);
             if($district->count()>0)
             {
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' => $district
-                    
-                ]);
+                $a=["responseCode"=>"0000",
+                "responseDesc"=>"OK",
+                 "data" => $district
+                ];    
+            return $this->headerResponse($a,$request);
             }
             else
             {
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' =>  $district                    
-                ]);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => $district
+                ];    
+            return $this->headerResponse($a,$request);
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
     public function delete(Request $request){
+        DB::beginTransaction();
         try {
-            $district = District::where('id',$request->id)
-            ->where('version',$request->version)->get();
+            $district = District::where([['id',$request->id],['version',$request->version]])->first();
 
             
             $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
@@ -174,17 +203,31 @@ class DistrictController extends Controller
              if($district->count() > 0)
              {
                  if ($district->save()) {
-                     return response()->json(['responseCode' => '0000', 'responseDesc' => 'District deleted successfully']);
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
                  }
              }
              else
              {
-                     return response()->json(['responseCode' => '0400', 'responseDesc' => 'Data Not Found']);
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
               }
 
             
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 

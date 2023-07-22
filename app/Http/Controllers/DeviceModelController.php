@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\DeviceModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -11,53 +11,55 @@ class DeviceModelController extends Controller
 {
     public function list(Request $request){
 
+      
         try {
 
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
-                $model = $request->model;
-                $vendor_name = $request->vendor_name;
-                $vendor_country = $request->vendor_country;
-                
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
+               
                 $query = DeviceModel::whereNull('deleted_by');
 
                  
                 if($request->model != '')
                 {
-                    $query->where('model', $request->model);
+                    $query->where('model', 'ILIKE', '%' . $request->modelName .'%');
                 }
                 if($request->vendor_name != '')
                 {
-                    $query->where('vendor_name', $request->vendor_name);
+                    $query->where('vendor_name', 'ILIKE', '%' . $request->vendorName . '%');
                 }
                 if($request->vendor_country != '')
                 {
-                    $query->where('vendor_country', $request->vendor_country);
+                    $query->where('vendor_country', 'ILIKE', '%' . $request->vendorCountry .'%');
                 }
                
                 $count = $query->get()->count();
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
-                ->limit($pageSize)->orderBy('model', 'ASC')
-                ->get(['id','model','vendor_name','vendor_country','version','created_by','create_ts','updated_by','update_ts']);
+                ->limit($pageSize)->orderBy('create_ts', 'DESC')
+                ->get(['id','model','vendor_name','vendor_country','version','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdatedBy','update_ts']);
                 
+               
+
                 if($count > 0)
                 {
-                    return response()->json(['responseCode' => '0000', 
-                                        'responseDesc' => 'OK',
-                                        'pageSize'  =>  $pageSize,
-                                        'totalPage' => ceil($count/$pageSize),
-                                        'total' => $count,
-                                        'rows' => $results
-                                    ]);
+                    $a=['responseCode' => '0000', 
+                        'responseDesc' => "OK",
+                        'pageSize'  =>  $pageSize,
+                        'totalPage' => ceil($count/$pageSize),
+                        'total' => $count,
+                        'rows' => $results
+                        ];    
+                        return $this->listResponse($a,$request);
                 }
                 else
                 {
-                    return response()->json(['responseCode' => '0400', 
-                                        'responseDesc' => 'Data Not Found',
-                                        'rows' => $results
-                                        
-                                    ]);
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
                 }
                 
         } catch (\Exception $e) {
@@ -70,36 +72,46 @@ class DeviceModelController extends Controller
      
         $validator = Validator::make($request->all(), [
             'model' => 'required|max:50|unique:tms_device_model',
-            'vendor_name' => 'required|max:100|unique:tms_device_model',
-            'vendor_country' => 'required',
+            'vendorName' => 'required|max:100|unique:tms_device_model,vendor_name',
+            'vendorCountry' => 'required',
            
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors(),
+                
+                ];    
+            return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
 
             $model = new DeviceModel();
             $model->version = 1; 
             $model->model = $request->model;
-            $model->vendor_name = $request->vendor_name;
-            $model->vendor_country = $request->vendor_country;
-            $model->model_information = $request->model_information;
+            $model->vendor_name = $request->vendorName;
+            $model->vendor_country = $request->vendorCountry;
+            $model->model_information = $request->modelInformation;
         
             if ($model->save()) {
-                return response()->json(['responseCode' => '0000', //sukses insert
-                                          'responseDesc' => 'Device Model created successfully',
-                                          'generatedId' =>  $model->id
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                    "generatedId" =>  $model->id
+                    ];    
+            return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', //gagal exception 
-                                     'responseDesc' => $e->getMessage()
-                                    ]);
+            DB::rollBack();
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
         }
 
     }
@@ -108,15 +120,18 @@ class DeviceModelController extends Controller
 
         $validator = Validator::make($request->all(), [
             'version' => 'required|numeric|max:32',
-            'id' => 'required' 
+            'id' => 'required',
+            'model' => 'required'
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }
-
+        DB::beginTransaction();
         try {
 
             $dm = DeviceModel::where([
@@ -127,22 +142,26 @@ class DeviceModelController extends Controller
 
             $dm->version = $request->version + 1;
             $dm->model = $request->model;
-            $dm->vendor_name = $request->vendor_name;
-            $dm->vendor_country = $request->vendor_country;
-            $dm->model_information = $request->model_information;
+            $dm->vendor_name = $request->vendorName;
+            $dm->vendor_country = $request->vendorCountry;
+            $dm->model_information = $request->modelInformation;
           
             
             if ($dm->save()) {
-                return response()->json(['responseCode' => '0000', //sukses update
-                                          'responseDesc' => 'Device Model updated successfully',
-                                        
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK"
+                    ];    
+                return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json([
-            'responseCode' => '3333', 
-            'responseDesc' => "Device Model Update Failure"
-        ]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
     
@@ -180,6 +199,8 @@ class DeviceModelController extends Controller
 
 
     public function delete(Request $request){
+
+        DB::beginTransaction();
         try {
             $m = DeviceModel::where('id','=',$request->id)
             ->where('version','=',$request->version);
@@ -191,16 +212,26 @@ class DeviceModelController extends Controller
                 $updateMt->delete_ts = $current_date_time; 
                 $updateMt->deleted_by = "admin";//Auth::user()->id 
                 if ($updateMt->save()) {
-                     return response()->json(['responseCode' => '0000', 'responseDesc' => 'Device Model  deleted successfully']);
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
                  }
              }
              else
              {
-                     return response()->json(['responseCode' => '0400', 'responseDesc' => 'Data Not Found']);
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
               }
 
             
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
         }
     }

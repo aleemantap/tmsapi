@@ -1,52 +1,83 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Http\Controllers\Controller;
 use App\Models\Country;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 
 class CountryController extends Controller
 {
-    //
+	
     public function list(Request $request){
         try {   
             $pageSize = $request->pageSize;
             $pageNum = $request->pageNum;
-            $code = $request->code;
-            $name = $request->name;
-
+          
             
-            $query = Country::query()->whereNull('deleted_by');
+            $query = Country::select(
+                    'id',
+                    'code',
+                    'name',
+                    'version',
+                    'created_by as createdBy', 
+                    'create_ts as createdTime', 
+                    'updated_by as lastUpdatedBy', 
+                    'update_ts as lastUpdatedTime'
+                    )
+            ->whereNull('deleted_by');
+            
             if($request->code != '')
             {
-                $query->where('code','ILIKE', '%'.$request->code.'%');
+                $query->where('code', 'ILIKE', '%' . $request->code . '%');
             }
+            
+            
             if($request->name != '')
             {
-                $query->where('name', 'ILIKE','%'. $request->name.'%');
+                
+                $query->where('name', 'ILIKE', '%' . $request->name . '%');
             }
-
+            
             $count = $query->get()->count();
 
             $results = $query->offset(($pageNum-1) * $pageSize) 
             ->limit($pageSize)->orderBy('create_ts', 'DESC')->get();
             
-        
-            return response()->json(['responseCode' => '0000', 
-                                    'responseDesc' => 'OK',
-                                    'pageSize'  =>  $pageSize,
-                                    'totalPage' => ceil($count/$pageSize),
-                                    'total' => $count,
-                                    'rows' => $results
-                                ]);
+            if( $count  > 0)
+                {
+                    $a=['responseCode' => '0000', 
+                    'responseDesc' => "OK",
+                    'pageSize'  =>  $pageSize,
+                    'totalPage' => ceil($count/$pageSize),
+                    'total' => $count,
+                    'rows' => $results
+                        ];    
+                    return $this->listResponse($a,$request);
+                }else{
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
+                }
+            
         } catch (\Exception $e) {
-            return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
+            
+            $a=["responseCode"=>"3333",
+                    "responseDesc"=>$e->getMessage()
+                    ];    
+                return $this->headerResponse($a,$request);
+
         }
     }
 
     public function create(Request $request){
+
+ 
+        
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:50',
@@ -54,34 +85,44 @@ class CountryController extends Controller
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            
+            $a  =   [   
+                    "responseCode"=>"5555",
+                    "responseDesc"=>$validator->errors()
+                    ];    
+            return $this->headerResponse($a,$request);
         }
+        
+       
         DB::beginTransaction();
         try {
+           
             $country = new Country();
             $country->version = 1; 
             $country->code = $request->code;
             $country->name = $request->name;
             
             if ($country->save()) {
-
                 DB::commit();
-                return response()->json(['responseCode' => '0000', //sukses insert
-                                          //'responseDesc' => 'Country created successfully',
-                                          'responseDesc' => $this->responseSuccess,
-                                          'generatedId'  =>  $country->id,
-                                        ]); 
+                $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK",
+                        "generatedId" =>  $country->id
+                        ];    
+                return $this->headerResponse($a,$request);
+                
             }
            
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['responseCode' => '3333', //gagal exception 
-                                     'responseDesc' => 'Country created Failure'
-                                    ]);
+            $a  =   [
+                    "responseCode"=>"3333",
+                    "responseDesc"=>$e->getMessage()
+                    ];    
+            return $this->failedInssertResponse($a,$request);
+                                   
         }
-
+    
     }
 
     public function update(Request $request){
@@ -93,11 +134,14 @@ class CountryController extends Controller
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+        return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
            
             $country = Country::where([
@@ -110,47 +154,65 @@ class CountryController extends Controller
             $country->code = $request->code;
             $country->name = $request->name;
             if ($country->save()) {
-                return response()->json(['responseCode' => '0000', //sukses update
-                                          'responseDesc' => 'Country updated successfully',
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK"
+                    ];    
+            return $this->headerResponse($a,$request);
             }
+            
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            DB::rollBack();
+            
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
     public function show(Request $request){
 
         try {
-            $country = Country::where('id',$request->id)->get();
+            //$country = Country::where('id',$request->id)->get();
+            $country = Country::select('id', 'code', 'name', 'version','created_by as createdBy', 'create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')->
+            where('id',$request->id)->get();
 
             if($country->count()>0)
             {
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' =>  $country
-                    
-                ]);
+               
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                     "data" => $country
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             else
             {
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' =>  $country
-                    
-                ]);
+              
+                $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                     "data" => $country
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
     public function delete(Request $request){
+        DB::beginTransaction();
         try {
             $country = Country::where([
                 ['id',$request->id],
@@ -161,10 +223,21 @@ class CountryController extends Controller
             $country->deleted_by = "admin";//Auth::user()->id
             
             if ($country->save()) {
-                return response()->json(['responseCode' => '0000', 'responseDesc' => 'Country deleted successfully']);
+                DB::commit();
+
+                 $a  =   [   
+                "responseCode"=>"0000",
+                "responseDesc"=>"OK"
+                ];    
+            return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
     
