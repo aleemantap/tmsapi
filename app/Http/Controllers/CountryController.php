@@ -12,6 +12,9 @@ class CountryController extends Controller
 {
 	
     public function list(Request $request){
+
+        //return $this->checkTenant($request);
+
         try {   
             $pageSize = $request->pageSize;
             $pageNum = $request->pageNum;
