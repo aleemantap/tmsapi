@@ -38,7 +38,7 @@ class DeviceModelController extends Controller
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
                 ->limit($pageSize)->orderBy('create_ts', 'DESC')
-                ->get(['id','model','vendor_name','vendor_country','version','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdatedBy','update_ts']);
+                ->get(['id','model','vendor_name','vendor_country','version','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdatedBy','update_ts as lastUpdatedTime']);
                 
                
 
@@ -167,33 +167,48 @@ class DeviceModelController extends Controller
     
     public function show(Request $request){
         try {
-            $DeviceModel = DeviceModel::where('id', $request->id)->whereNull('deleted_by');
+            $DeviceModel = DeviceModel::
+            select('id',
+            'model',
+            'model_information as modelInformation',
+            'vendor_name as vendorName',
+            'vendor_country as vendorCountry',
+            'version',
+            'created_by as createdBy',
+            'create_ts as createdTime',
+            'updated_by as lastUpdateBy',
+            'update_ts as lastUpdateTime'
+            )
+            ->where('id', $request->id)->whereNull('deleted_by');
             
             
             if($DeviceModel->get()->count()>0)
             {
                 $DeviceModel =  $DeviceModel->get()->makeHidden(['deleted_by', 'delete_ts']);
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' => $DeviceModel
-                    
-                ]);
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                     "data" => $DeviceModel
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             else
             {
            
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' => []                   
-                ]);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => $DeviceModel
+                ];    
+            return $this->headerResponse($a,$request);
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
@@ -232,7 +247,11 @@ class DeviceModelController extends Controller
             
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 

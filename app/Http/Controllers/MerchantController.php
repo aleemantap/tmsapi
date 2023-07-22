@@ -290,7 +290,11 @@ class MerchantController extends Controller
             
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
