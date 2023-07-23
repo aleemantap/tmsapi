@@ -5,7 +5,7 @@ use App\Models\Merchant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\DB;
 
 class MerchantController extends Controller
 {
@@ -13,53 +13,57 @@ class MerchantController extends Controller
 
         try {
 
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
-                $type_id = $request->type_id;
-                $name = $request->name;
-                $address = $request->address;
-                $zipcode = $request->zipcode;
-                // $query = Merchant::query()
-                //     ->with(['merchanttype' => function ($query) {
-                //         $query->select('id', 'name');
-                //     },['district']=> function ($query) {
-                //         $query->select('id', 'name');
-                //     }
-                //     ]);
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
+                
 
-                $query = Merchant::join('tms_merchant_type', 'tms_merchant.type_id', '=', 'tms_merchant_type.id')
+                $query = Merchant::select
+                            (
+                                'tms_merchant.id',
+                                'tms_merchant.name',
+                                'tms_merchant.company_name as companyName',
+                                'tms_district.name as districtName',
+                                'tms_city.name as cityName',
+                                'tms_states.name as stateName',
+                                'tms_country.code as countryCode',
+                                'tms_country.name as countryName',
+                                'tms_merchant.address',
+                                'tms_merchant.zipcode',
+                                'tms_merchant_type.name as merchantType',
+                                'tms_merchant.version',
+                                'tms_merchant.created_by as createdBy',
+                                'tms_merchant.create_ts as createdTime',
+                                'tms_merchant.updated_by as lastUpdatedBy',
+                                'tms_merchant.update_ts as lastUpdatedTime',
+                                )
+                ->join('tms_merchant_type', 'tms_merchant.type_id', '=', 'tms_merchant_type.id')
                 ->join('tms_district', 'tms_merchant.district_id', '=', 'tms_district.id')
                 ->join('tms_city', 'tms_district.city_id', '=', 'tms_city.id')
                 ->join('tms_states', 'tms_city.states_id', '=', 'tms_states.id')
                 ->join('tms_country', 'tms_states.country_id', '=', 'tms_country.id');
-                
-                //$query = Merchant::query()->with(['merchanttype','district']);
-
-                // $query = Merchant::whereHas(['merchanttype' => function ($query) {
-                 //       $query->where('deleted_by', null);
-                   // }])->with('district.customer');// ->withCount('diagnosis');
-                
+                $query->where('tms_merchant.tenant_id', $request->header('Tenant-id'));
+              
                 if($request->type_id != '')
                 {
-                    $query->where('tms_merchant.type_id', $request->type_id);
+                    $query->where('tms_merchant.type_id', 'ILIKE', '%' . $request->type_id .'%');
                 }
                 if($request->name != '')
                 {
-                    $query->where('tms_merchant.name', $request->name);
+                    $query->where('tms_merchant.name', 'ILIKE', '%' . $request->name . '%');
                 }
                 if($request->address != '')
                 {
-                    $query->where('tms_merchant.address', $request->address);
+                    $query->where('tms_merchant.address', 'ILIKE', '%' . $request->address .'%');
                 }
                 if($request->zipcode != '')
                 {
-                    $query->where('tms_merchant.zipcode', $request->zipcode);
+                    $query->where('tms_merchant.zipcode', 'ILIKE', '%' . $request->zipcode .'%');
                 }
 
                 $count = $query->get()->count();
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
-                ->limit($pageSize)->orderBy('name', 'ASC')
+                ->limit($pageSize)->orderBy('tms_merchant.name', 'ASC')
                 ->get(['tms_merchant.*',
                       'tms_merchant_type.name as merchanttype',
                       'tms_district.name as districtname',
@@ -71,25 +75,29 @@ class MerchantController extends Controller
                 
                 if($count > 0)
                 {
-                    return response()->json(['responseCode' => '0000', 
-                                        'responseDesc' => 'OK',
-                                        'pageSize'  =>  $pageSize,
-                                        'totalPage' => ceil($count/$pageSize),
-                                        'total' => $count,
-                                        'rows' => $results
-                                    ]);
+                    $a=['responseCode' => '0000', 
+                        'responseDesc' => "OK",
+                        'pageSize'  =>  $pageSize,
+                        'totalPage' => ceil($count/$pageSize),
+                        'total' => $count,
+                        'rows' => $results
+                        ];    
+                        return $this->listResponse($a,$request);
                 }
                 else
                 {
-                    return response()->json(['responseCode' => '0400', 
-                                        'responseDesc' => 'Data Not Found',
-                                        'rows' => $results
-                                        
-                                    ]);
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
                 }
                 
         } catch (\Exception $e) {
-            return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
+            $a=["responseCode"=>"3333",
+            "responseDesc"=>$e->getMessage()
+            ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
@@ -99,43 +107,52 @@ class MerchantController extends Controller
         
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:100|unique:tms_merchant',
-            'company_name' => 'required|max:100|unique:tms_merchant',
+            'companyName' => 'required|max:100',
             'address' => 'required|max:255',
-            'tenant_id' => 'required',
-            'district_id' => 'required',
+            'districtId' => 'required|max:36',
             'zipcode' => 'required|max:5',
-            'type_id' => 'required',
+            'merchantTypeId' => 'required|max:36'
              
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors(),
+                
+                ];    
+            return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
 
             $merchant = new Merchant();
             $merchant->version = 1; 
             $merchant->name = $request->name;
-            $merchant->company_name = $request->company_name;
+            $merchant->company_name = $request->companyName;
             $merchant->address = $request->address;
-            $merchant->tenant_id = $request->tenant_id;
-            $merchant->district_id = $request->district_id;
+            $merchant->tenant_id = $request->header('Tenant-id');
+            $merchant->district_id = $request->districtId;
             $merchant->zipcode = $request->zipcode;
-            $merchant->type_id = $request->type_id;
+            $merchant->type_id = $request->merchantTypeId;
 
             if ($merchant->save()) {
-                return response()->json(['responseCode' => '0000', //sukses insert
-                                          'responseDesc' => 'Merchant created successfully',
-                                          
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                    "generatedId" =>  $merchant->id
+                    ];    
+            return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', //gagal exception 
-                                     'responseDesc' => $e->getMessage()
-                                    ]);
+            DB::rollBack();
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
         }
 
     }
@@ -145,82 +162,106 @@ class MerchantController extends Controller
         $validator = Validator::make($request->all(), [
             'version' => 'required|numeric|max:32',
             'name' => 'required|max:100|unique:tms_merchant',
-            'id' => 'required' 
+            'id' => 'required',
+            'companyName' => 'required',
+            'districtId' => 'required|max:36',
+            'address' => 'required|max:255',
+            'zipcode' => 'required|max:5',
+            'merchantTypeId' => 'required|max:36'
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
 
             $merchant = Merchant::where([
                 ['id',$request->id],
-                ['version',$request->version]
+                ['version',$request->version],
+                ['tenant_id', $request->header('Tenant-id')]
                
             ])->first();
 
             $merchant->version = $request->version + 1;
             $merchant->name = $request->name;
-            $merchant->company_name = $request->company_name;
+            $merchant->company_name = $request->companyName;
             $merchant->address = $request->address;
-            $merchant->tenant_id = $request->tenant_id;
-            $merchant->district_id = $request->district_id;
+            $merchant->district_id = $request->districtId;
             $merchant->zipcode = $request->zipcode;
-            $merchant->type_id = $request->type_id;
+            $merchant->type_id = $request->merchantTypeId;
             
             if ($merchant->save()) {
-                return response()->json(['responseCode' => '0000', //sukses update
-                                          'responseDesc' => 'Merchant updated successfully',
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK"
+                    ];    
+                return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => "Merchant Update Failure"]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
     
     public function show(Request $request){
         try {
-            $district = Merchant::where('id', $request->id)->select('id','name','company_name','version','zipcode','address','district_id','type_id');
+            $merchant = Merchant::where('id', $request->id)
+            ->where('tenant_id',$request->header('Tenant-id'))
+            ->select('id','name','company_name as companyName','version','zipcode','address','district_id','type_id','created_by as createdBy','create_ts as CreatedTime','updated_by as lastUpadatedBy','update_ts as lastUpdateTime');
             
-            if($district->get()->count()>0)
+            if($merchant->get()->count()>0)
             {
-                $district =  $district->with(['district' => function ($query) {
+                $merchant =  $merchant->with(['district' => function ($query) {
                        $query->select('id', 'name');
                     }, 'merchanttype' => function($query){
                         $query->select('id', 'name');
                     }])->get();
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' => $district
                     
-                ]);
+                    $a=["responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                     "data" => $merchant
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             else
             {
            
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' => []                   
-                ]);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => $merchant
+                ];    
+            return $this->headerResponse($a,$request);
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
 
     public function delete(Request $request){
+        DB::beginTransaction();
         try {
             $m = Merchant::where('id','=',$request->id)
-            ->where('version','=',$request->version);
+            ->where('version','=',$request->version)
+            ->where('tenant_id',$request->header('Tenant-id'));
              $cn = $m->get()->count();
              if( $cn > 0)
              {
@@ -229,17 +270,31 @@ class MerchantController extends Controller
                 $updateMt->delete_ts = $current_date_time; 
                 $updateMt->deleted_by = "admin";//Auth::user()->id 
                 if ($updateMt->save()) {
-                     return response()->json(['responseCode' => '0000', 'responseDesc' => 'Merchant  deleted successfully']);
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
                  }
              }
              else
              {
-                     return response()->json(['responseCode' => '0400', 'responseDesc' => 'Data Not Found']);
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
               }
 
             
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
