@@ -15,11 +15,7 @@ class HeaderAccess
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    // public function handle(Request $request, Closure $next)
-    // {
-    //     return $next($request);
-    // }
-
+   
     // public function handle(Request $request, Closure $next) {
     //     if (Auth::check() && Auth::user()->type == 'admin')  {
     //       return $next($request);
@@ -71,26 +67,26 @@ class HeaderAccess
             }
 
         /* signature  */
-        if($request->header('signature')){
+        // if($request->header('signature')){
           
-            if($request->header('signature')!='tes'){
+        //     if($request->header('signature')!='tes'){
 
-                $a=["responseCode"=>"4444",
-                "responseDesc"=>"Invalid signature"
-                ];    
-                return $this->headerResponse($a,$request);
-            }
+        //         $a=["responseCode"=>"4444",
+        //         "responseDesc"=>"Invalid signature"
+        //         ];    
+        //         return $this->headerResponse($a,$request);
+        //     }
 
            
             
-        }else{
+        // }else{
             
-            $a=["responseCode"=>"2222",
-            "responseDesc"=>"signature is required"
-            ];    
-            return $this->headerResponse($a,$request);
+        //     $a=["responseCode"=>"2222",
+        //     "responseDesc"=>"signature is required"
+        //     ];    
+        //     return $this->headerResponse($a,$request);
 
-        }
+        // }
 
         /* Reference-Number */
         if(empty($request->header('Reference-Number'))){

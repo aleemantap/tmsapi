@@ -62,7 +62,7 @@ class ApplicationController extends Controller
             'checksum' => 'required|max:32', 
             'unique_name' => 'required|max:50', 
             'unique_icon_name' => 'required|max:50', 
-            'tenant_id' => 'required|max:50', 
+            //'tenant_id' => 'required|max:50', 
             'icon_url' => 'required|max:255', 
         ]);
  
@@ -77,7 +77,7 @@ class ApplicationController extends Controller
             $path =null;
             if($request->file('icon_url'))
             {
-                $path = \Storage::cloud()->put('files', $request->file('icon_url'));
+                $path = \Storage::cloud()->put(env('MINIO_BUCKET_ICON_PATH_SERVER'), $request->file('icon_url'));
             }
             //$url=\Storage::cloud()->temporaryUrl($path, \Carbon\Carbon::now()->addMinutes(1));
         
@@ -94,7 +94,7 @@ class ApplicationController extends Controller
             $app->unique_name = $request->unique_name;
             $app->unique_icon_name = $request->unique_icon_name;
             $app->icon_url = $path;
-            $app->tenant_id = $request->tenant_id;
+            $app->tenant_id = $request->header('tenant-id');
         
             if ($app->save()) {
                 return response()->json(['responseCode' => '0000', //sukses insert
