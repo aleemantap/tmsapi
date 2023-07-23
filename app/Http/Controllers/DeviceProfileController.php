@@ -16,16 +16,17 @@ class DeviceProfileController extends Controller
 
         try {
 
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
-                $name = $request->name;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 
-                $query = DeviceProfile::whereNull('deleted_by');
+                $query = DeviceProfile::select('id', 'name', 'is_default as default','version','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdateBy','update_ts as lastUpdateBy')
+                ->where('tenant_id','=', $request->header('Tenant-id'))
+                ->whereNull('deleted_by');
 
                  
                 if($request->name != '')
                 {
-                    $query->where('name', $request->name);
+                    $query->where('name', 'ILIKE', '%' . $request->name .'%');
                 }
                
                 $count = $query->get()->count();
@@ -36,25 +37,29 @@ class DeviceProfileController extends Controller
                 
                 if($count > 0)
                 {
-                    return response()->json(['responseCode' => '0000', 
-                                        'responseDesc' => 'OK',
-                                        'pageSize'  =>  $pageSize,
-                                        'totalPage' => ceil($count/$pageSize),
-                                        'total' => $count,
-                                        'rows' => $results
-                                    ]);
+                    $a=['responseCode' => '0000', 
+                        'responseDesc' => "OK",
+                        'pageSize'  =>  $pageSize,
+                        'totalPage' => ceil($count/$pageSize),
+                        'total' => $count,
+                        'rows' => $results
+                        ];    
+                        return $this->listResponse($a,$request);
                 }
                 else
                 {
-                    return response()->json(['responseCode' => '0400', 
-                                        'responseDesc' => 'Data Not Found',
-                                        'rows' => $results
-                                        
-                                    ]);
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
                 }
                 
         } catch (\Exception $e) {
-            return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
+            $a=["responseCode"=>"3333",
+            "responseDesc"=>$e->getMessage()
+            ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
@@ -179,7 +184,8 @@ class DeviceProfileController extends Controller
 
             $dp = DeviceProfile::where([
                 ['id',$request->id],
-                ['version',$request->version]
+                ['version',$request->version],
+                ['tenant_id', $request->header('Tenant-id')]
                
             ])->first();
 
@@ -213,6 +219,11 @@ class DeviceProfileController extends Controller
                     "responseDesc"=>"OK"
                     ];    
                 return $this->headerResponse($a,$request);
+            }else{
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
             DB::rollBack();
@@ -226,41 +237,68 @@ class DeviceProfileController extends Controller
     
     public function show(Request $request){
         try {
-            $DeviceModel = DeviceProfile::where('id', $request->id)->whereNull('deleted_by');
+            $DeviceProfile = DeviceProfile::
+            select('id',
+            'name',
+            'heartbeat_interval as heartbeatInterval',
+            'diagnostic_interval as diagnosticInterval',
+            'mask_home_button as maskHomeButton',
+            'mask_status_bar as maskStatusBar',
+            'schedule_reboot as scheduleReboot',
+            'schedule_reboot_time as scheduleRebootTime',
+            'schedule_reboot_time as scheduleRebootTime',
+            'is_default as default',
+            'relocation_alert as relocationAlert',
+            'moving_threshold as movingThreshold',
+            'admin_password as adminPassword',
+            'front_app as frontApp',
+            'version as version',
+            'created_by as createdBy',
+            'create_ts as createdTime',
+            'updated_by as lastUpdateBy',
+            'update_ts as lastUpdateTime'
+            )
+            ->where('id', $request->id)
+            ->where('tenant_id',$request->header('Tenant-id'))
+            ->whereNull('deleted_by');
             
             
-            if($DeviceModel->get()->count()>0)
+            if($DeviceProfile->get()->count()>0)
             {
-                $DeviceModel =  $DeviceModel->get()->makeHidden(['deleted_by', 'delete_ts']);
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' => $DeviceModel
-                    
-                ]);
+                $DeviceProfile =  $DeviceProfile->get()->makeHidden(['deleted_by', 'delete_ts']);
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                     "data" => $DeviceProfile
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             else
             {
            
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' => []                   
-                ]);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => $DeviceProfile
+                ];    
+            return $this->headerResponse($a,$request);
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
 
     public function delete(Request $request){
+        DB::beginTransaction();
         try {
             $m = DeviceProfile::where('id','=',$request->id)
-            ->where('version','=',$request->version);
+            ->where('version','=',$request->version)->where('tenant_id', '=', $request->header('Tenant-id'));
              $cn = $m->get()->count();
              if( $cn > 0)
              {
@@ -269,17 +307,31 @@ class DeviceProfileController extends Controller
                 $updateMt->delete_ts = $current_date_time; 
                 $updateMt->deleted_by = "admin";//Auth::user()->id 
                 if ($updateMt->save()) {
-                     return response()->json(['responseCode' => '0000', 'responseDesc' => 'Device Profile  deleted successfully']);
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
                  }
              }
              else
              {
-                     return response()->json(['responseCode' => '0400', 'responseDesc' => 'Data Not Found']);
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
               }
 
             
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 

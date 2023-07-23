@@ -84,11 +84,11 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->post('/district/delete', [DistrictController::class,'delete']);
     
         /* router merchat_type */
-        $router->get('/merchanttype/list', [MerchantTypeController::class,'list']);
-        $router->get('/merchanttype/get', [MerchantTypeController::class,'show']);
-        $router->post('/merchanttype/add', [MerchantTypeController::class,'create']);
-        $router->post('/merchanttype/update', [MerchantTypeController::class,'update']);
-        $router->post('/merchanttype/delete', [MerchantTypeController::class,'delete']);
+        $router->get('/merchantType/list', [MerchantTypeController::class,'list']);
+        $router->get('/merchantType/get', [MerchantTypeController::class,'show']);
+        $router->post('/merchantType/add', [MerchantTypeController::class,'create']);
+        $router->post('/merchantType/update', [MerchantTypeController::class,'update']);
+        $router->post('/merchantType/delete', [MerchantTypeController::class,'delete']);
     
         /* router merchat */
         $router->get('/merchant/list', [MerchantController::class,'list']);
@@ -98,11 +98,11 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->post('/merchant/delete', [MerchantController::class,'delete']);
     
         /* router device model */
-        $router->get('/devicemodel/list', [DeviceModelController::class,'list']);
-        $router->get('/devicemodel/get', [DeviceModelController::class,'show']);
-        $router->post('/devicemodel/add', [DeviceModelController::class,'create']);
-        $router->post('/devicemodel/update', [DeviceModelController::class,'update']);
-        $router->post('/devicemodel/delete', [DeviceModelController::class,'delete']);
+        $router->get('/deviceModel/list', [DeviceModelController::class,'list']);
+        $router->get('/deviceModel/get', [DeviceModelController::class,'show']);
+        $router->post('/deviceModel/add', [DeviceModelController::class,'create']);
+        $router->post('/deviceModel/update', [DeviceModelController::class,'update']);
+        $router->post('/deviceModel/delete', [DeviceModelController::class,'delete']);
     
         /* router device profile */
         $router->get('/profile/list', [DeviceProfileController::class,'list']);
@@ -122,11 +122,11 @@ Route::middleware('HeaderAccess')->group(function($router){
     
     
         /* router terminal group*/ 
-        $router->get('/terminalgroup/list', [TerminalGroupController::class,'list']);
-        $router->get('/terminalgroup/get', [TerminalGroupController::class,'show']);
-        $router->post('/terminalgroup/add', [TerminalGroupController::class,'create']);
-        $router->post('/terminalgroup/update', [TerminalGroupController::class,'update']);
-        $router->post('/terminalgroup/delete', [TerminalGroupController::class,'delete']);
+        $router->get('/terminalGroup/list', [TerminalGroupController::class,'list']);
+        $router->get('/terminalGroup/get', [TerminalGroupController::class,'show']);
+        $router->post('/terminalGroup/add', [TerminalGroupController::class,'create']);
+        $router->post('/terminalGroup/update', [TerminalGroupController::class,'update']);
+        $router->post('/terminalGroup/delete', [TerminalGroupController::class,'delete']);
     
     
         /* router terminal*/ 

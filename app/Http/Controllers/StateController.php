@@ -14,8 +14,8 @@ class StateController extends Controller
 
         try {
 
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $country_id = $request->countryId;
                 $name = $request->name;
                 $query = State::select('id','country_id','name','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')->whereNull('deleted_by')
