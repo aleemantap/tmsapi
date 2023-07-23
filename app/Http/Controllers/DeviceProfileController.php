@@ -117,13 +117,16 @@ class DeviceProfileController extends Controller
         }
 
     }
-
+   // $m->whereHas('vendorCustomer.customer', function($q) use ($idPerusahaan) {
+     //   $q->where('id', $idPerusahaan);
+    //});
     public function update(Request $request){
 
         $validator = Validator::make($request->all(), [
             'version' => 'required|numeric|max:32',
             'id' => 'required',
             'name' => 'required|max:50|unique:tms_device_profile',
+           
             'heartbeat_interval' => 'required|numeric',
             'diagnostic_interval' => 'required|numeric',
             'mask_home_button'=>  'required|boolean',  

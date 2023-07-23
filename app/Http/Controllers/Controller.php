@@ -40,7 +40,7 @@ class Controller extends BaseController
          ->header('Response-Timestamp',date('Y-m-d H:i:s'));
     }
 
-    public function headerResponse($a,$request){
+    public function headerResponse($a,$request){ 
 
         return response()->json($a)
          ->header('Content-Type','app/json-application')

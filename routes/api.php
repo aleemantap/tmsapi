@@ -144,41 +144,41 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->post('/downloadtask/update',  [DownloadTaskController::class,'update']);
     
         /* router download task  application link*/ 
-        $router->get('/downloadtaskapplicationlink/list', [DownloadTaskApplicationLinkController::class,'list']);
-        $router->get('/downloadtaskapplicationlink/get', [DownloadTaskApplicationLinkController::class,'show']);
-        $router->post('/downloadtaskapplicationlink/add', [DownloadTaskApplicationLinkController::class,'create']);
-        $router->post('/downloadtaskapplicationlink/update', [DownloadTaskApplicationLinkController::class,'update']);
+        // $router->get('/downloadtaskapplicationlink/list', [DownloadTaskApplicationLinkController::class,'list']);
+        // $router->get('/downloadtaskapplicationlink/get', [DownloadTaskApplicationLinkController::class,'show']);
+        // $router->post('/downloadtaskapplicationlink/add', [DownloadTaskApplicationLinkController::class,'create']);
+        // $router->post('/downloadtaskapplicationlink/update', [DownloadTaskApplicationLinkController::class,'update']);
       
-        /* router downloadtasklog*/ 
-        $router->get('/downloadtasklog/list', [DownloadTaskLogController::class,'list']);
-        $router->get('/downloadtasklog/get', [DownloadTaskLogController::class,'show']);
-        $router->post('/downloadtasklog/add', [DownloadTaskLogController::class,'create']);
-        $router->post('/downloadtasklog/update', [DownloadTaskLogController::class,'update']);
+        // /* router downloadtasklog*/ 
+        // $router->get('/downloadtasklog/list', [DownloadTaskLogController::class,'list']);
+        // $router->get('/downloadtasklog/get', [DownloadTaskLogController::class,'show']);
+        // $router->post('/downloadtasklog/add', [DownloadTaskLogController::class,'create']);
+        // $router->post('/downloadtasklog/update', [DownloadTaskLogController::class,'update']);
     
-        /* router download task  terminal group link*/ 
-        $router->get('/downloadtaskterminalgrouplink/list', [DownloadTaskTerminalGroupLinkController::class,'list']);
-        $router->get('/downloadtaskterminalgrouplink/get', [DownloadTaskTerminalGroupLinkController::class,'show']);
-        $router->post('/downloadtaskterminalgrouplink/add', [DownloadTaskTerminalGroupLinkController::class,'create']);
-        $router->post('/downloadtaskterminalgrouplink/update', [DownloadTaskTerminalGroupLinkController::class,'update']);
+        // /* router download task  terminal group link*/ 
+        // $router->get('/downloadtaskterminalgrouplink/list', [DownloadTaskTerminalGroupLinkController::class,'list']);
+        // $router->get('/downloadtaskterminalgrouplink/get', [DownloadTaskTerminalGroupLinkController::class,'show']);
+        // $router->post('/downloadtaskterminalgrouplink/add', [DownloadTaskTerminalGroupLinkController::class,'create']);
+        // $router->post('/downloadtaskterminalgrouplink/update', [DownloadTaskTerminalGroupLinkController::class,'update']);
     
-        /* router download task  terminal  link*/ 
-        $router->get('/downloadtaskterminallink/list', [DownloadTaskTerminalLinkController::class,'list']);
-        $router->get('/downloadtaskterminallink/get', [DownloadTaskTerminalLinkController::class,'show']);
-        $router->post('/downloadtaskterminallink/add', [DownloadTaskTerminalLinkController::class,'create']);
-        $router->post('/downloadtaskterminallink/update', [DownloadTaskTerminalLinkController::class,'update']);
+        // /* router download task  terminal  link*/ 
+        // $router->get('/downloadtaskterminallink/list', [DownloadTaskTerminalLinkController::class,'list']);
+        // $router->get('/downloadtaskterminallink/get', [DownloadTaskTerminalLinkController::class,'show']);
+        // $router->post('/downloadtaskterminallink/add', [DownloadTaskTerminalLinkController::class,'create']);
+        // $router->post('/downloadtaskterminallink/update', [DownloadTaskTerminalLinkController::class,'update']);
     
-        /* router hear beat*/ 
-        $router->get('/heartbeat/list', [HeartBeatController::class,'list']);
-        $router->get('/heartbeat/get', [HeartBeatController::class,'show']);
-        $router->post('/heartbeat/add', [HeartBeatController::class,'create']);
-        $router->post('/heartbeat/update', [HeartBeatController::class,'update']);
+        // /* router hear beat*/ 
+        // $router->get('/heartbeat/list', [HeartBeatController::class,'list']);
+        // $router->get('/heartbeat/get', [HeartBeatController::class,'show']);
+        // $router->post('/heartbeat/add', [HeartBeatController::class,'create']);
+        // $router->post('/heartbeat/update', [HeartBeatController::class,'update']);
     
     
-        /*router terminal group link */ 
-        $router->get('/terminalgrouplink/list', [TerminalGroupLinkController::class,'list']);
-        $router->get('/terminalgrouplink/get', [TerminalGroupLinkController::class,'show']);
-        $router->post('/terminalgrouplink/add', [TerminalGroupLinkController::class,'create']);
-        $router->post('/terminalgrouplink/update', [TerminalGroupLinkController::class,'update']);
+        // /*router terminal group link */ 
+        // $router->get('/terminalgrouplink/list', [TerminalGroupLinkController::class,'list']);
+        // $router->get('/terminalgrouplink/get', [TerminalGroupLinkController::class,'show']);
+        // $router->post('/terminalgrouplink/add', [TerminalGroupLinkController::class,'create']);
+        // $router->post('/terminalgrouplink/update', [TerminalGroupLinkController::class,'update']);
     
         
         /* router delete task*/ 
@@ -187,35 +187,35 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->post('/deletetask/add', [DeleteTaskController::class,'create']);
         $router->post('/deletetask/update', [DeleteTaskController::class,'update']);
     
-        /* router delete task app*/ 
-        $router->get('/deletetaskapp/list', [DeleteTaskAppController::class,'list']);
-        $router->get('/deletetaskapp/get', [DeleteTaskAppController::class,'show']);
-        $router->post('/deletetaskapp/add', [DeleteTaskAppController::class,'create']);
-        $router->post('/deletetaskapp/update', [DeleteTaskAppController::class,'update']);
+        // /* router delete task app*/ 
+        // $router->get('/deletetaskapp/list', [DeleteTaskAppController::class,'list']);
+        // $router->get('/deletetaskapp/get', [DeleteTaskAppController::class,'show']);
+        // $router->post('/deletetaskapp/add', [DeleteTaskAppController::class,'create']);
+        // $router->post('/deletetaskapp/update', [DeleteTaskAppController::class,'update']);
     
-        /* router delete tas klog*/ 
-        $router->get('/deletetasklog/list', [DeleteTaskLogController::class,'list']);
-        $router->get('/deletetasklog/get', [DeleteTaskLogController::class,'show']);
-        $router->post('/deletetasklog/add', [DeleteTaskLogController::class,'create']);
-        $router->post('/deletetasklog/update', [DeleteTaskLogController::class,'update']);
+        // /* router delete tas klog*/ 
+        // $router->get('/deletetasklog/list', [DeleteTaskLogController::class,'list']);
+        // $router->get('/deletetasklog/get', [DeleteTaskLogController::class,'show']);
+        // $router->post('/deletetasklog/add', [DeleteTaskLogController::class,'create']);
+        // $router->post('/deletetasklog/update', [DeleteTaskLogController::class,'update']);
     
-         /* router delete task  terminal group link*/ 
-        $router->get('/deletetaskterminalgrouplink/list', [DeleteTaskTerminalGroupLinkController::class,'list']);
-        $router->get('/deletetaskterminalgrouplink/get', [DeleteTaskTerminalGroupLinkController::class,'show']);
-        $router->post('/deletetaskterminalgrouplink/add', [DeleteTaskTerminalGroupLinkController::class,'create']);
-        $router->post('/deletetaskterminalgrouplink/update', [DeleteTaskTerminalGroupLinkController::class,'update']);
+        //  /* router delete task  terminal group link*/ 
+        // $router->get('/deletetaskterminalgrouplink/list', [DeleteTaskTerminalGroupLinkController::class,'list']);
+        // $router->get('/deletetaskterminalgrouplink/get', [DeleteTaskTerminalGroupLinkController::class,'show']);
+        // $router->post('/deletetaskterminalgrouplink/add', [DeleteTaskTerminalGroupLinkController::class,'create']);
+        // $router->post('/deletetaskterminalgrouplink/update', [DeleteTaskTerminalGroupLinkController::class,'update']);
         
-        /* router delete task  terminal  link*/ 
-        $router->get('/deletetaskterminallink/list', [DeleteTaskTerminalLinkController::class,'list']);
-        $router->get('/deletetaskterminallink/get', [DeleteTaskTerminalLinkController::class,'show']);
-        $router->post('/deletetaskterminallink/add', [DeleteTaskTerminalLinkController::class,'create']);
-        $router->post('/deletetaskterminallink/update', [DeleteTaskTerminalLinkController::class,'update']);
+        // /* router delete task  terminal  link*/ 
+        // $router->get('/deletetaskterminallink/list', [DeleteTaskTerminalLinkController::class,'list']);
+        // $router->get('/deletetaskterminallink/get', [DeleteTaskTerminalLinkController::class,'show']);
+        // $router->post('/deletetaskterminallink/add', [DeleteTaskTerminalLinkController::class,'create']);
+        // $router->post('/deletetaskterminallink/update', [DeleteTaskTerminalLinkController::class,'update']);
     
-         /* router diagnostic info*/ 
-         $router->get('/diagnosticinfo/list', [DiagnosticInfoController::class,'list']);
-         $router->get('/diagnosticinfo/get', [DiagnosticInfoController::class,'show']);
-         $router->post('/diagnosticinfo/add', [DiagnosticInfoController::class,'create']);
-         $router->post('/diagnosticinfo/update', [DiagnosticInfoController::class,'update']);
+        //  /* router diagnostic info*/ 
+        //  $router->get('/diagnosticinfo/list', [DiagnosticInfoController::class,'list']);
+        //  $router->get('/diagnosticinfo/get', [DiagnosticInfoController::class,'show']);
+        //  $router->post('/diagnosticinfo/add', [DiagnosticInfoController::class,'create']);
+        //  $router->post('/diagnosticinfo/update', [DiagnosticInfoController::class,'update']);
      
      
      
