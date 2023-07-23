@@ -5,7 +5,7 @@ use App\Models\City;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\DB;
 
 class CityController extends Controller
 {
@@ -13,11 +13,11 @@ class CityController extends Controller
 
         try {
 
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $states_id = $request->states_id;
                 $name = $request->name;
-                $query = City ::query()
+                $query = City ::select('id','name','version','states_id','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
 
                     ->with(['state' => function ($query) {
                         $query->select('id', 'name');
@@ -26,11 +26,11 @@ class CityController extends Controller
                     ->whereNull('deleted_by');
                 if($request->states_id != '')
                 {
-                    $query->where('states_id', $request->states_id);
+                    $query->where('states_id', 'ILIKE', '%' . $request->states_id . '%');
                 }
                 if($request->name != '')
                 {
-                    $query->where('name', $request->name);
+                    $query->where('name', 'ILIKE', '%' . $request->name . '%');
                 }
 
                 //$count = $query->get()->count();
@@ -38,38 +38,36 @@ class CityController extends Controller
                 $results = $query->offset(($pageNum-1) * $pageSize) 
                 ->limit($pageSize)->orderBy('create_ts', 'DESC')
                 
-                ->get()->makeHidden(['delete_ts','deleted_by']);
+                ->get()->makeHidden(['delete_ts','deleted_by','states_id']);
 
                 $count = count($results->toArray());
 
                 if( $count  > 0)
                 {
-                    return response()->json(['responseCode' => '0000', 
-                                        'responseDesc' => 'OK',
-                                        'pageSize'  =>  $pageSize,
-                                        'totalPage' => ceil($count/$pageSize),
-                                        'total' => $count,
-                                        'rows' => $results
-                                    ]);
+                    $a=['responseCode' => '0000', 
+                        'responseDesc' => "OK",
+                        'pageSize'  =>  $pageSize,
+                        'totalPage' => ceil($count/$pageSize),
+                        'total' => $count,
+                        'rows' => $results
+                        ];    
+                        return $this->listResponse($a,$request);
                 }
                 else
                 {
-                    return response()->json(['responseCode' => '0400', 
-                                        'responseDesc' => 'Data Not Found',
-                                        'rows' => $results
-                                    ]);
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
                 }
                 
             
-                return response()->json(['responseCode' => '0000', 
-                                        'responseDesc' => 'OK',
-                                        'pageSize'  =>  $pageSize,
-                                        'totalPage' => ceil($count/$pageSize),
-                                        'total' => $count,
-                                        'rows' => $results
-                                    ]);
         } catch (\Exception $e) {
-            return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
+            $a=["responseCode"=>"3333",
+                    "responseDesc"=>$e->getMessage()
+                    ];    
+                return $this->headerResponse($a,$request);
         }
     }
 
@@ -83,11 +81,13 @@ class CityController extends Controller
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }
-
+        DB::beginTransaction();
         try {
 
             $city = new City();
@@ -96,15 +96,21 @@ class CityController extends Controller
             $city->states_id = $request->states_id;
 
             if ($city->save()) {
-                return response()->json(['responseCode' => '0000', //sukses insert
-                                          'responseDesc' => 'City created successfully',
-                                          
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                    "generatedId" =>  $city->id
+                    ];    
+            return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', //gagal exception 
-                                     'responseDesc' =>  "City Create Failure"
-           ]);
+            DB::rollBack();
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
         }
 
     }
@@ -119,11 +125,14 @@ class CityController extends Controller
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
 
             $city = City::where([
@@ -136,46 +145,61 @@ class CityController extends Controller
             $city->name = $request->name;
             
             if ($city->save()) {
-                return response()->json(['responseCode' => '0000', //sukses update
-                                          'responseDesc' => 'City updated successfully',
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK"
+                    ];    
+                return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => "City Update Failure"]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
     
     public function show(Request $request){
         try {
-            $city = City::where('id', $request->id)->with(['state' => function ($query) {
+            $city = City::select('id', 'name','version','states_id','created_by as createdBy', 'create_ts as createdTime','updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+            ->where('id', 'ILIKE', '%' . $request->id . '%')->with(['state' => function ($query) {
                 $query->select('id', 'name');
-            }])->get();
+            }])->get()->makeHidden(['states_id']);
             if($city->count()>0)
             {
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' => $city
-                   
-                ]);
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                     "data" => $city
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             else
             {
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' =>  $city                    
-                ]);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => $city
+                ];    
+            return $this->headerResponse($a,$request);
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
+    
     }
 
+
     public function delete(Request $request){
+        DB::beginTransaction();
         try {
             $t= City::where('id','=',$request->id)
             ->where('version','=',$request->version);
@@ -187,21 +211,32 @@ class CityController extends Controller
                 $update_t->delete_ts = $current_date_time; 
                 $update_t->deleted_by = "admin";//Auth::user()->id 
                 if ($update_t->save()) {
-                     return response()->json(['responseCode' => '0000', 'responseDesc' => 'City deleted successfully']);
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
                  }
-             }
+            }
              else
-             {
-                     return response()->json(['responseCode' => '0400', 'responseDesc' => 'Data Not Found']);
-              }
+            {
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
+            }
 
             
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
-    
-
-    
 }

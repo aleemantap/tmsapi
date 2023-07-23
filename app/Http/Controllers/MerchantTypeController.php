@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\MerchantType;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -15,8 +15,10 @@ class MerchantTypeController extends Controller
 
                 $pageSize = $request->pageSize;
                 $pageNum = $request->pageNum;
-                $name = $request->name;
-                $query = MerchantType::whereNull('deleted_by');
+                
+                $query = MerchantType::
+                select('id','name','description','version','created_by as createdBy', 'create_ts as createdTime','updated_by as lastUpdateBy','update_ts as lastUpdateTime')->
+                whereNull('deleted_by');
                 
                 if($request->name != '')
                 {
@@ -30,25 +32,29 @@ class MerchantTypeController extends Controller
                 
                 if($count > 0)
                 {
-                    return response()->json(['responseCode' => '0000', 
-                                        'responseDesc' => 'OK',
-                                        'pageSize'  =>  $pageSize,
-                                        'totalPage' => ceil($count/$pageSize),
-                                        'total' => $count,
-                                        'rows' => $results
-                                    ]);
+                    $a=['responseCode' => '0000', 
+                        'responseDesc' => "OK",
+                        'pageSize'  =>  $pageSize,
+                        'totalPage' => ceil($count/$pageSize),
+                        'total' => $count,
+                        'rows' => $results
+                        ];    
+                        return $this->listResponse($a,$request);
                 }
                 else
                 {
-                    return response()->json(['responseCode' => '0400', 
-                                        'responseDesc' => 'Data Not Found',
-                                        'rows' => $results
-                                        
-                                    ]);
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
                 }
                 
         } catch (\Exception $e) {
-            return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
+            $a=["responseCode"=>"3333",
+            "responseDesc"=>$e->getMessage()
+            ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
@@ -62,28 +68,38 @@ class MerchantTypeController extends Controller
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors(),
+                
+                ];    
+            return $this->headerResponse($a,$request);
         }
-
+        DB::beginTransaction();
         try {
 
             $merchantType = new MerchantType();
             $merchantType->version = 1; 
             $merchantType->name = $request->name;
+            //$merchantType->created_by = $request->header('Tenant-id');
             $merchantType->description = $request->description;
 
             if ($merchantType->save()) {
-                return response()->json(['responseCode' => '0000', //sukses insert
-                                          'responseDesc' => 'MerchantType created successfully',
-                                          'generatedId'  =>  $merchantType->id
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=> "OK",
+                    "generatedId" =>  $merchantType->id
+                    ];    
+            return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', //gagal exception 
-                                     'responseDesc' => $e->getMessage()
-                                    ]);
+            DB::rollBack();
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
         }
 
     }
@@ -98,11 +114,13 @@ class MerchantTypeController extends Controller
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }
-
+        DB::beginTransaction();
         try {
 
             $mt = MerchantType::where([
@@ -113,50 +131,76 @@ class MerchantTypeController extends Controller
 
             $mt->version = $request->version + 1;
             $mt->name = $request->name;
-            $mt->description = $request->name;
+            $mt->description = $request->description;
             
             if ($mt->save()) {
-                return response()->json(['responseCode' => '0000', //sukses update
-                                          'responseDesc' => 'MechantType updated successfully',
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK"
+                    ];    
+                return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => "MechantType Update Failure"]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
     
     public function show(Request $request){
         try {
-            $mt = MerchantType::where('id', $request->id)->get();
+            $mt = MerchantType::select('id','name','description','version','created_by as createdBy', 'create_ts as createdTime','updated_by as lastUpdateBy','update_ts as lastUpdateTime')
+            ->where('id', $request->id)->get();
             if($mt->count()>0)
             {
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' => $mt
-                    
-                ]);
+                $a=["responseCode"=>"0000",
+                "responseDesc"=>"OK",
+                 "data" => $mt
+                ];    
+            return $this->headerResponse($a,$request);
             }
             else
             {
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' =>  $mt                    
-                ]);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => $district
+                ];    
+                return $this->headerResponse($a,$request);
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
     public function delete(Request $request){
+
+        $validator = Validator::make($request->all(), [
+           'version' => 'required' ,
+           'id' => 'required'
+        ]);
+ 
+        if ($validator->fails()) {
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+
+        DB::beginTransaction();
         try {
-            $mt = MerchantType::where('id','=',$request->id)
-            ->where('version','=',$request->version);
+            $mt = MerchantType::where([['id','=',$request->id],['version','=',$request->version]]);
              $cn = $mt->get()->count();
              if( $cn > 0)
              {
@@ -165,17 +209,31 @@ class MerchantTypeController extends Controller
                 $updateMt->delete_ts = $current_date_time; 
                 $updateMt->deleted_by = "admin";//Auth::user()->id 
                 if ($updateMt->save()) {
-                     return response()->json(['responseCode' => '0000', 'responseDesc' => 'Merchant Type deleted successfully']);
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
                  }
              }
              else
              {
-                     return response()->json(['responseCode' => '0400', 'responseDesc' => 'Data Not Found']);
-              }
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
+            }
 
             
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
