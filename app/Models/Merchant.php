@@ -23,7 +23,7 @@ class Merchant extends Model
      * @var string
      */
     
-   	public function merchanttype()
+   	public function merchantType()
     {
        
          return $this->belongsTo('App\Models\MerchantType','type_id','id');

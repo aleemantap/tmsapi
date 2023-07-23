@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\TerminalGroup;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -61,34 +62,42 @@ class TerminalGroupController extends Controller
      
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:100|unique:tms_terminal_group',
-            'description' => 'max:255',
-            'tenant_id' =>'required'
+            'description' => 'max:255'
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
 
             $tg = new TerminalGroup();
             $tg->version = 1; 
             $tg->name = $request->name;
             $tg->description = $request->description;
-            $tg->tenant_id = $request->tenant_id;
+            $tg->tenant_id = $request->header('Tenant-id');
           
             if ($tg->save()) {
-                return response()->json(['responseCode' => '0000', //sukses insert
-                                          'responseDesc' => 'Terminal Group created successfully',
-                                          'generatedId' =>  $tg->id
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                    "generatedId" =>  $tg->id
+                    ];    
+            return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', //gagal exception 
-                                     'responseDesc' => $e->getMessage()
-                                    ]);
+            DB::rollBack();
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
         }
 
     }

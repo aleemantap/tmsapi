@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 use App\Models\DeviceProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+
 
 
 class DeviceProfileController extends Controller
@@ -14,16 +16,17 @@ class DeviceProfileController extends Controller
 
         try {
 
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
-                $name = $request->name;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 
-                $query = DeviceProfile::whereNull('deleted_by');
+                $query = DeviceProfile::select('id', 'name', 'is_default as default','version','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdateBy','update_ts as lastUpdateBy')
+                ->where('tenant_id','=', $request->header('Tenant-id'))
+                ->whereNull('deleted_by');
 
                  
                 if($request->name != '')
                 {
-                    $query->where('name', $request->name);
+                    $query->where('name', 'ILIKE', '%' . $request->name .'%');
                 }
                
                 $count = $query->get()->count();
@@ -34,25 +37,29 @@ class DeviceProfileController extends Controller
                 
                 if($count > 0)
                 {
-                    return response()->json(['responseCode' => '0000', 
-                                        'responseDesc' => 'OK',
-                                        'pageSize'  =>  $pageSize,
-                                        'totalPage' => ceil($count/$pageSize),
-                                        'total' => $count,
-                                        'rows' => $results
-                                    ]);
+                    $a=['responseCode' => '0000', 
+                        'responseDesc' => "OK",
+                        'pageSize'  =>  $pageSize,
+                        'totalPage' => ceil($count/$pageSize),
+                        'total' => $count,
+                        'rows' => $results
+                        ];    
+                        return $this->listResponse($a,$request);
                 }
                 else
                 {
-                    return response()->json(['responseCode' => '0400', 
-                                        'responseDesc' => 'Data Not Found',
-                                        'rows' => $results
-                                        
-                                    ]);
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
                 }
                 
         } catch (\Exception $e) {
-            return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
+            $a=["responseCode"=>"3333",
+            "responseDesc"=>$e->getMessage()
+            ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
@@ -61,172 +68,237 @@ class DeviceProfileController extends Controller
      
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:50|unique:tms_device_profile',
-            'heartbeat_interval' => 'required|numeric',
-            'diagnostic_interval' => 'required|numeric',
-            'mask_home_button'=>  'required|boolean',  
-            'mask_status_bar'=>  'required|boolean', 
-            'schedule_reboot' => 'required|boolean', 
-            'relocation_alert' => 'boolean', 
-            'schedule_reboot_time'  => ['required_if:schedule_reboot,true','date_format:H:i:s'], 
-            'moving_threshold'  =>  ['required_if:relocation_alert,true','numeric'], 
-            'admin_password' =>  'max:50',
-            'front_app' =>  'max:255',
+            'heartbeatInterval' => 'required|numeric',
+            'diagnosticInterval' => 'required|numeric',
+            'maskHomeButton'=>  'required|boolean',  
+            'maskStatusBar'=>  'required|boolean', 
+            'scheduleReboot' => 'required|boolean', 
+            'relocationAlert' => 'boolean', 
+            'scheduleRebootTime'  => ['required_if:scheduleReboot,true','date_format:H:i:s'], 
+            'movingThreshold'  =>  ['required_if:relocationAlert,true','numeric'], 
+            'adminPassword' =>  'max:50',
+            'frontApp' =>  'max:255',
             
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
 
             $dp = new DeviceProfile();
             $dp->version = 1; 
             $dp->name = $request->name;
-            $dp->heartbeat_interval = $request->heartbeat_interval;
-            $dp->diagnostic_interval = $request->diagnostic_interval;
-            $dp->mask_home_button = $request->mask_home_button;
-            $dp->mask_status_bar = $request->mask_status_bar;
-            $dp->schedule_reboot = $request->schedule_reboot;
-            if($request->schedule_reboot==true)
+            $dp->heartbeat_interval = $request->heartbeatInterval;
+            $dp->diagnostic_interval = $request->diagnosticInterval;
+            $dp->mask_home_button = $request->maskHomeButton;
+            $dp->mask_status_bar = $request->maskStatusBar;
+            $dp->schedule_reboot = $request->scheduleReboot;
+            if($request->scheduleReboot==true)
             {
-                $dp->schedule_reboot_time = $request->schedule_reboot_time;
+                $dp->schedule_reboot_time = $request->scheduleRebootTime;
             }
-            $dp->is_default = $request->is_default;
-            $dp->relocation_alert = $request->relocation_alert;
-            if($request->relocation_alert==true)
+            $dp->is_default = $request->default;
+            $dp->relocation_alert = $request->relocationAlert;
+            if($request->relocationAlert==true)
             {
-                $dp->moving_threshold = $request->moving_threshold;
+                $dp->moving_threshold = $request->movingThreshold;
             }
-            $dp->admin_password = $request->admin_password;
-            $dp->front_app = $request->front_app;
-            $dp->tenant_id = $request->tenant_id;
+            $dp->admin_password = $request->adminPassword;
+            $dp->front_app = $request->frontApp;
+            $dp->tenant_id = $request->header('Tenant-id');
         
             if ($dp->save()) {
-                return response()->json(['responseCode' => '0000', //sukses insert
-                                          'responseDesc' => 'Device Profile created successfully',
-                                          'generatedId' =>  $dp->id
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                    "generatedId" =>  $dp->id
+                    ];    
+            return $this->headerResponse($a,$request);
+
+
+
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', //gagal exception 
-                                     'responseDesc' => $e->getMessage()
-                                    ]);
+            DB::rollBack();
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
         }
 
     }
-   // $m->whereHas('vendorCustomer.customer', function($q) use ($idPerusahaan) {
-     //   $q->where('id', $idPerusahaan);
-    //});
+
     public function update(Request $request){
 
-        $validator = Validator::make($request->all(), [
+        $check = DeviceProfile::where([
+            ['id',$request->id],
+            ['name',$request->name]
+           
+        ])->first();
+        
+        
+        $device     = [
             'version' => 'required|numeric|max:32',
             'id' => 'required',
-            'name' => 'required|max:50|unique:tms_device_profile',
-           
-            'heartbeat_interval' => 'required|numeric',
-            'diagnostic_interval' => 'required|numeric',
-            'mask_home_button'=>  'required|boolean',  
-            'mask_status_bar'=>  'required|boolean', 
-            'schedule_reboot' => 'required|boolean', 
-            'relocation_alert' => 'boolean', 
-            'schedule_reboot_time'  => ['required_if:schedule_reboot,true','date_format:H:i:s'], 
-            'moving_threshold'  =>  ['required_if:relocation_alert,true','numeric'], 
-            'admin_password' =>  'max:50',
-            'front_app' =>  'max:255',
-        ]);
- 
-        if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            'name' => 'required',
+            'heartbeatInterval' => 'required|numeric',
+            'diagnosticInterval' => 'required|numeric',
+            'maskHomeButton'=>  'required|boolean',  
+            'maskStatusBar'=>  'required|boolean', 
+            'scheduleReboot' => 'required|boolean', 
+            'relocationAlert' => 'boolean', 
+            'scheduleRebootTime'  => ['required_if:scheduleReboot,true','date_format:H:i:s'], 
+            'movingThreshold'  =>  ['required_if:relocationAlert,true','numeric'], 
+            'adminPassword' =>  'max:50',
+            'frontApp' =>  'max:255',
+        ];
+
+
+        if(!$check){
+         
+            $device['name'] = 'required|max:50|unique:tms_device_profile';
         }
 
+        $validator = Validator::make($request->all(), $device);
+
+        
+        if ($validator->fails()) {
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+
+        DB::beginTransaction();
         try {
 
             $dp = DeviceProfile::where([
                 ['id',$request->id],
-                ['version',$request->version]
+                ['version',$request->version],
+                ['tenant_id', $request->header('Tenant-id')]
                
             ])->first();
 
             $dp->version = $request->version + 1;
             $dp->name = $request->name;
-            $dp->heartbeat_interval = $request->heartbeat_interval;
-            $dp->diagnostic_interval = $request->diagnostic_interval;
-            $dp->mask_home_button = $request->mask_home_button;
-            $dp->mask_status_bar = $request->mask_status_bar;
-            $dp->schedule_reboot = $request->schedule_reboot;
-            if($request->schedule_reboot==true)
+            $dp->heartbeat_interval = $request->heartbeatInterval;
+            $dp->diagnostic_interval = $request->diagnosticInterval;
+            $dp->mask_home_button = $request->maskHomeButton;
+            $dp->mask_status_bar = $request->maskStatusBar;
+            $dp->schedule_reboot = $request->scheduleReboot;
+            if($request->scheduleReboot==true)
             {
-                $dp->schedule_reboot_time = $request->schedule_reboot_time;
+                $dp->schedule_reboot_time = $request->scheduleRebootTime;
             }
-            $dp->is_default = $request->is_default;
-            $dp->relocation_alert = $request->relocation_alert;
-            if($request->relocation_alert==true)
+            $dp->is_default = $request->default;
+            $dp->relocation_alert = $request->relocationAlert;
+            if($request->relocationAlert==true)
             {
-                $dp->moving_threshold = $request->moving_threshold;
+                $dp->moving_threshold = $request->movingThreshold;
             }
-            $dp->admin_password = $request->admin_password;
-            $dp->front_app = $request->front_app;
-            $dp->tenant_id = $request->tenant_id;
+            $dp->admin_password = $request->adminPassword;
+            $dp->front_app = $request->frontApp;
+            $dp->tenant_id = $request->header('Tenant-id');
         
             
             
             if ($dp->save()) {
-                return response()->json(['responseCode' => '0000', //sukses update
-                                          'responseDesc' => 'Device Profile updated successfully',
-                                        
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK"
+                    ];    
+                return $this->headerResponse($a,$request);
+            }else{
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
             }
         } catch (\Exception $e) {
-            return response()->json([
-            'responseCode' => '3333', 
-            'responseDesc' => "Device Profile Update Failure"
-        ]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
     
     public function show(Request $request){
         try {
-            $DeviceModel = DeviceProfile::where('id', $request->id)->whereNull('deleted_by');
+            $DeviceProfile = DeviceProfile::
+            select('id',
+            'name',
+            'heartbeat_interval as heartbeatInterval',
+            'diagnostic_interval as diagnosticInterval',
+            'mask_home_button as maskHomeButton',
+            'mask_status_bar as maskStatusBar',
+            'schedule_reboot as scheduleReboot',
+            'schedule_reboot_time as scheduleRebootTime',
+            'schedule_reboot_time as scheduleRebootTime',
+            'is_default as default',
+            'relocation_alert as relocationAlert',
+            'moving_threshold as movingThreshold',
+            'admin_password as adminPassword',
+            'front_app as frontApp',
+            'version as version',
+            'created_by as createdBy',
+            'create_ts as createdTime',
+            'updated_by as lastUpdateBy',
+            'update_ts as lastUpdateTime'
+            )
+            ->where('id', $request->id)
+            ->where('tenant_id',$request->header('Tenant-id'))
+            ->whereNull('deleted_by');
             
             
-            if($DeviceModel->get()->count()>0)
+            if($DeviceProfile->get()->count()>0)
             {
-                $DeviceModel =  $DeviceModel->get()->makeHidden(['deleted_by', 'delete_ts']);
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' => $DeviceModel
-                    
-                ]);
+                $DeviceProfile =  $DeviceProfile->get()->makeHidden(['deleted_by', 'delete_ts']);
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                     "data" => $DeviceProfile
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             else
             {
            
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' => []                   
-                ]);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => $DeviceProfile
+                ];    
+            return $this->headerResponse($a,$request);
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
 
     public function delete(Request $request){
+        DB::beginTransaction();
         try {
             $m = DeviceProfile::where('id','=',$request->id)
-            ->where('version','=',$request->version);
+            ->where('version','=',$request->version)->where('tenant_id', '=', $request->header('Tenant-id'));
              $cn = $m->get()->count();
              if( $cn > 0)
              {
@@ -235,17 +307,31 @@ class DeviceProfileController extends Controller
                 $updateMt->delete_ts = $current_date_time; 
                 $updateMt->deleted_by = "admin";//Auth::user()->id 
                 if ($updateMt->save()) {
-                     return response()->json(['responseCode' => '0000', 'responseDesc' => 'Device Profile  deleted successfully']);
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
                  }
              }
              else
              {
-                     return response()->json(['responseCode' => '0400', 'responseDesc' => 'Data Not Found']);
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
               }
 
             
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
