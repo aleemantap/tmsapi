@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 use App\Models\DeleteTask;
+use App\Models\DeleteTaskApp; 
+use App\Models\DeleteTaskTerminalGroupLink;
+use App\Models\DeleteTaskTerminalLink;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
@@ -12,49 +16,57 @@ class DeleteTaskController extends Controller
     public function list(Request $request){
 
         try {
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
-                $name = $request->name;
-                $status = $request->status;
-                
-                $query = DeleteTask::whereNull('deleted_by');
+                $pageSize = ($request->pageSize)?$request->pageSize:10;
+                $pageNum = ($request->pageNum)?$request->pageNum:1;
 
-                 
-                if($request->name != '')
-                {
-                    $query->where('name', $request->name);
-                }
-                if($request->status != '')
-                {
-                    $query->where('status', $request->status);
-                }
-               
+                $query = DeleteTask::select(
+                    'tms_delete_task.id',
+                    'tms_delete_task.name',
+                    'tms_delete_task as deleteTime',
+                    'tms_delete_task.status',
+                    'tms_delete_task.version',
+                    'tms_delete_task.created_by as createdBy',
+                    'tms_delete_task.create_ts as createdTime',
+                    'tms_delete_task.updated_by as lastUpdatedBy',
+                    'tms_delete_task.update_ts as lastUpdatedTime'
+                )
+                ->whereNull('tms_delete_task.deleted_by');
+                
+               /*  if($request->terminalId){
+
+                } */
+                    
                 $count = $query->get()->count();
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
-                ->limit($pageSize)->orderBy('create_ts', 'DESC')
-                ->get()->makeHidden(['deleted_by','delete_ts']);
+                ->limit($pageSize)->orderBy('tms_delete_task.create_ts', 'DESC')
+                ->get()->makeHidden(['tms_delete_task.deleted_by','tms_delete_task.delete_ts']);
                 
                 if($count > 0)
                 {
-                    return response()->json(['responseCode' => '0000', 
-                                        'responseDesc' => 'OK',
-                                        'pageSize'  =>  $pageSize,
-                                        'totalPage' => ceil($count/$pageSize),
-                                        'total' => $count,
-                                        'rows' => $results
-                                    ]);
+                    $a=['responseCode' => '0000', 
+                        'responseDesc' => "OK",
+                        'pageSize'  =>  $pageSize,
+                        'totalPage' => ceil($count/$pageSize),
+                        'total' => $count,
+                        'rows' => $results
+                        ];    
+                        return $this->listResponse($a,$request);
                 }
                 else
                 {
-                    return response()->json(['responseCode' => '0400', 
-                                        'responseDesc' => 'Data Not Found',
-                                        'rows' => $results
-                                    ]);
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
                 }
                 
         } catch (\Exception $e) {
-            return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
+            $a=["responseCode"=>"3333",
+            "responseDesc"=>$e->getMessage()
+            ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
@@ -62,39 +74,94 @@ class DeleteTaskController extends Controller
     public function create(Request $request){
      
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:100|unique:tms_delete_task',
-            'status' => 'required|numeric',
-            'delete_time' => 'max:6',
-            'old_status' =>  'numeric',
-            'tenant_id' =>  'required',
+            'name' => 'required|max:50|unique:tms_download_task',
+            'deleteTime' => 'date_format:Y-m-d H:i:s',
+            'applications' =>  'required',
+            'terminalGroupIds' => 'required_without:terminalIds',
+            'terminalIds' => 'required_without:terminalGroupIds',
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }
-      
+        DB::beginTransaction();
         try {
 
             $dt = new DeleteTask();
             $dt->version = 1; 
             $dt->name  =  $request->name;
-            $dt->status = $request->status;
-            $dt->delete_time = $request->delete_time;
-            $dt->old_status = $request->old_status;
-            $dt->tenant_id = $request->tenant_id;
+            $dt->delete_time = $request->deleteTime;
+            $dt->status = 0;
+            $dt->old_status = 0;
+            $dt->tenant_id = $request->header('Tenant-id');
+            $dt->save();
+
+            $dataSet = [];
             
-            if ($dt->save()) {
-                return response()->json(['responseCode' => '0000', //sukses insert
-                                          'responseDesc' => 'Delete Task created successfully',
-                                          'generatedId' =>  $t->id
-                                        ]);
-            }
+            foreach ($request->applications as $app) {
+                    $dataSet[] = [
+                        'app_name'            => $app['appName'],
+                        'package_name'    => $app['packageName'],
+                        'app_version'         => $app['appVersion'],
+                        'task_id' => $dt->id
+                    ];
+                    // $ob = new DeleteTaskApp();
+                    // $ob->app_name = $app['appName'];
+                    // $ob->package_name = $app['packageName'];
+                    // $ob->app_version = $app['appVersion'];
+                    // $ob->task_id = $dt->id;
+                    // $ob->save();
+                    
+                }
+                
+            DeleteTaskApp::insert($dataSet);
+
+            // if($request->terminalGroupIds){
+            //     $dataTerminalGroup = [];
+            //     foreach ($request->terminalGroupIds as $terminalGroupIds) {
+            //         $dataTerminalGroup []= [
+            //             'delete_task_id' => $dt->id,
+            //             'group_id' => $terminalGroupIds
+            //         ];
+                    
+            //     }
+            //     DeleteTaskTerminalGroupLink::insert($dataTerminalGroup);
+            // }
+                    
+            // if($request->terminalIds){
+                
+            //     $dataTerminal = [];
+            //     foreach ($request->terminalIds as $terminalIds) {
+            //         $dataTerminal[] =[
+            //         'delete_task_id' => $dt->id,
+            //         'terminal_id' => $terminalIds
+            //         ];
+                    
+            //     }
+            //     DeleteTaskTerminalLink::insert($dataTerminal);
+            // }
+
+            DB::commit();
+
+            $a  =   [   
+                "responseCode"=>"0000",
+                "responseDesc"=>"OK",
+                "generatedId" =>  $dt->id
+                ];    
+            return $this->headerResponse($a,$request);
+
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', //gagal exception 
-                                     'responseDesc' => $e->getMessage()
-                                    ]);
+            DB::rollBack();
+
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
         }
 
     }
@@ -149,34 +216,55 @@ class DeleteTaskController extends Controller
     
     public function show(Request $request){
         try {
-            $t = DeleteTask::where('id', $request->id)->whereNull('deleted_by');
+            $t = DeleteTask::
+            select(
+                'id',
+                'name',
+                'delete_time as deleteTime',
+                'status',
+                'version',
+                'created_by as createdBy',
+                'create_ts as createdTime',
+                'updated_by as lastUpdatedBy',
+                'update_ts as lastUpdatedTime'                
+                )
+            -> 
+            where('id', $request->id)->whereNull('deleted_by')->with(['applications' => function ($query) {
+                $query->select('id', 'package_name as packageName','app_name as name','app_version as appVersion');
+             
+            }])
+            ;
             if($t->get()->count()>0)
             {
-                $t =  $t->get()->makeHidden(['deleted_by', 'delete_ts']);
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' => $t
-                    
-                ]);
+                $t =  $t->get()
+                ->makeHidden(['deleted_by', 'delete_ts']);
+                $a=["responseCode"=>"0000",
+                "responseDesc"=>"OK",
+                 "data" => $t
+                ];    
+            return $this->headerResponse($a,$request);
             }
             else
             {
            
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' => []                   
-                ]);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => $t
+                ];    
+                return $this->headerResponse($a,$request);              
+               
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
-
 
     public function delete(Request $request){
         try {

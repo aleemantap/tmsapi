@@ -9,13 +9,14 @@ use App\Blameable;
 
 class  DeleteTaskApp extends Model 
 {
-    use Blameable;
+    //use Blameable;
     use HasFactory;
     use Uuid;
 	
     protected $table = "tms_delete_task_app";
-    const CREATED_AT = 'create_ts';
-    const UPDATED_AT = 'update_ts';
+    //const CREATED_AT = 'create_ts';
+    //const UPDATED_AT = 'update_ts';
+   
     /**
      * The name of the "updated at" column.
      *
