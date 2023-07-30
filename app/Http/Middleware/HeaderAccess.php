@@ -66,28 +66,8 @@ class HeaderAccess
                 return $this->headerResponse($a,$request);
             }
 
-        /* signature  */
-        // if($request->header('signature')){
-          
-        //     if($request->header('signature')!='tes'){
-
-        //         $a=["responseCode"=>"4444",
-        //         "responseDesc"=>"Invalid signature"
-        //         ];    
-        //         return $this->headerResponse($a,$request);
-        //     }
-
-           
-            
-        // }else{
-            
-        //     $a=["responseCode"=>"2222",
-        //     "responseDesc"=>"signature is required"
-        //     ];    
-        //     return $this->headerResponse($a,$request);
-
-        // }
-
+       
+        
         /* Reference-Number */
         if(empty($request->header('Reference-Number'))){
             
@@ -101,18 +81,32 @@ class HeaderAccess
 
         /* Request-Timestamp */
 
-        if(!empty($request->header('Request-Timestamp'))){
+        if(empty($request->header('Request-Timestamp'))){
             
-            return $next($request);
-   
-        }else{
-            
+      
             $a=["responseCode"=>"2222",
             "responseDesc"=>"Request-Timestamp is required"
             ];    
             return $this->headerResponse($a,$request);
 
         }
+
+         //X-Consumer-Username
+         if(!empty($request->header('X-Consumer-Username'))){
+            
+            \Illuminate\Support\Facades\Session::put('X-Consumer-Username', $request->header('X-Consumer-Username'));
+            return $next($request);
+   
+        }else{
+            
+            $a=["responseCode"=>"2222",
+            "responseDesc"=>"X-Consumer-Username is required"
+            ];    
+            return $this->headerResponse($a,$request);
+
+        }
+
+
        
     }
 }

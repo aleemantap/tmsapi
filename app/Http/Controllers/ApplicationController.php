@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\Application;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -388,7 +389,7 @@ class ApplicationController extends Controller
              }
 
         } 
-        catch (\Excception $e)
+        catch (\Exception $e)
         {
             $a  =   [   
                 "responseCode"=>"3333",

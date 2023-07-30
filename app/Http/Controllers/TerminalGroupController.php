@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 use App\Models\TerminalGroup;
+use App\Models\TerminalGroupLink;
+use App\Models\Terminal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -15,16 +17,38 @@ class TerminalGroupController extends Controller
 
         try {
 
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
-                $name = $request->name;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 
-                $query = TerminalGroup::whereNull('deleted_by');
+                $query = TerminalGroup::
+                select(
+                    'id',
+                    'name',
+                    'description',
+                    'version',
+                    'created_by as createdBy',
+                    'create_ts as createdTime',
+                    'updated_by as lastUpdatedBy',
+                    'update_ts as lastUpdatedTime'
+                )
+                ->where('tenant_id',$request->header('Tenant-id'))
+                ->whereNull('deleted_by');
 
                  
-                if($request->name != '')
+                if($request->id != '')
                 {
-                    $query->where('name', $request->name);
+                    $query->where('id', 'ILIKE', '%' . $request->id . '%');
+                }
+                 
+                if($request->sn != '')
+                {
+                    $query->whereIn('tms_terminal_group.id', TerminalGroupLink::select('terminal_group_id')->whereIn('terminal_id', Terminal::select('id')->where('sn', 'ILIKE', '%' . $request->sn . '%'))->groupBy('terminal_group_id')); //'Terminal::whereIn('id',$request->sn)
+                }
+
+                if($request->terminalId != '')
+                {
+                    $query->whereIn('tms_terminal_group.id', TerminalGroupLink::select('terminal_group_id')->where('terminal_id',$request->terminalId));
+                    
                 }
                
                 $count = $query->get()->count();
@@ -35,25 +59,29 @@ class TerminalGroupController extends Controller
                 
                 if($count > 0)
                 {
-                    return response()->json(['responseCode' => '0000', 
-                                        'responseDesc' => 'OK',
-                                        'pageSize'  =>  $pageSize,
-                                        'totalPage' => ceil($count/$pageSize),
-                                        'total' => $count,
-                                        'rows' => $results
-                                    ]);
+                    $a=['responseCode' => '0000', 
+                    'responseDesc' => "OK",
+                    'pageSize'  =>  $pageSize,
+                    'totalPage' => ceil($count/$pageSize),
+                    'total' => $count,
+                    'rows' => $results
+                    ];    
+                    return $this->listResponse($a,$request);
                 }
                 else
                 {
-                    return response()->json(['responseCode' => '0400', 
-                                        'responseDesc' => 'Data Not Found',
-                                        'rows' => $results
-                                        
-                                    ]);
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
                 }
                 
         } catch (\Exception $e) {
-            return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
+            $a=["responseCode"=>"3333",
+            "responseDesc"=>$e->getMessage()
+            ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
@@ -81,16 +109,33 @@ class TerminalGroupController extends Controller
             $tg->name = $request->name;
             $tg->description = $request->description;
             $tg->tenant_id = $request->header('Tenant-id');
-          
-            if ($tg->save()) {
-                DB::commit();
+
+            $tg->save();
+
+            if($request->terminalIds){
+
+                $dataSet = [];
+                    foreach ($request->terminalIds as $terminal) {
+                        $dataSet[] = [
+                            'terminal_id'  => $terminal,
+                            'terminal_group_id'    => $tg->id
+                        ];
+                    }
+
+               TerminalGroupLink::insert($dataSet);
+                
+            }
+            
+            DB::commit();
                 $a  =   [   
                     "responseCode"=>"0000",
                     "responseDesc"=>"OK",
                     "generatedId" =>  $tg->id
                     ];    
             return $this->headerResponse($a,$request);
-            }
+           
+          
+
         } catch (\Exception $e) {
             DB::rollBack();
             $a  =   [
@@ -104,53 +149,99 @@ class TerminalGroupController extends Controller
 
     public function update(Request $request){
 
-        $validator = Validator::make($request->all(), [
+        $check = TerminalGroup::where([
+            ['id',$request->id],
+            ['name',$request->name]
+           
+        ])->first();
+        
+
+        $terminalGrp = [
             'version' => 'required|numeric|max:32',
             'id' => 'required',
-            'tenant_id' => 'required',
-            'name' => 'required|max:100|unique:tms_terminal_group',
-            
-        ]);
- 
+            'name' => 'required',
+        ];
+
+        if(!$check){
+         
+            $terminalGrp['name'] = 'required|max:100|unique:tms_terminal_group';
+        }
+        $validator = Validator::make($request->all(), $terminalGrp);
+        
+       
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
 
             $tg = TerminalGroup::where([
                 ['id',$request->id],
-                ['version',$request->version]
+                ['version',$request->version],
+                ['tenant_id',$request->header('Tenant-id')]
+
                
             ])->first();
 
             $tg->version = $request->version + 1;
             $tg->name = $request->name;
             $tg->description = $request->description;
-            $tg->tenant_id = $request->tenant_id;
+                             
         
-            
-            
-            if ($tg->save()) {
-                return response()->json(['responseCode' => '0000', //sukses update
-                                          'responseDesc' => 'Termianl Group updated successfully',
-                                        
-                                        ]);
+            $tg->save();
+
+            if($request->terminalIds){
+
+                TerminalGroupLink::where('terminal_group_id', $tg->id)->delete();
+                $dataSet = [];
+                    foreach ($request->terminalIds as $terminal) {
+                        $dataSet[] = [
+                            'terminal_id'  => $terminal,
+                            'terminal_group_id'    => $tg->id
+                        ];
+                    }
+
+               TerminalGroupLink::insert($dataSet);
+                
             }
+            DB::commit();
+            
+            $a  =   [   
+                "responseCode"=>"0000",
+                "responseDesc"=>"OK"
+                ];    
+            return $this->headerResponse($a,$request);
+            
         } catch (\Exception $e) {
-            return response()->json([
-            'responseCode' => '3333', 
-            'responseDesc' => "Terminal Group Update Failure"
-        ]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
     
     public function show(Request $request){
         try {
-            $tg = TerminalGroup::where('id', $request->id)->whereNull('deleted_by');
-            
+            $tg = TerminalGroup::where('id', $request->id)
+            ->select(
+                'id',
+                'name',
+                'description',
+                'version',
+                'created_by as createdBy',
+                'create_ts as createdTime',
+                'updated_by as lastUpdatedBy',
+                'update_ts as lastUpdatedTime'
+            )
+            ->whereNull('deleted_by');
+          
             
             if($tg->get()->count()>0)
             {
@@ -182,30 +273,223 @@ class TerminalGroupController extends Controller
 
     public function delete(Request $request){
         try {
-            $tg= TermianlGroup::where('id','=',$request->id)
-            ->where('version','=',$request->version);
+            $tg= TerminalGroup::where('id','=',$request->id)
+            ->where('version','=',$request->version)
+            ->where('tenant_id',$request->header('Tenant-id'));
              $cn = $tg->get()->count();
+
+             $update_tg = $tg->first();
+
              if( $cn > 0)
              {
-                $update_tg = $tg->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $update_tg->delete_ts = $current_date_time; 
-                $update_tg->deleted_by = "admin";//Auth::user()->id 
-                if ($update->save()) {
-                     return response()->json(['responseCode' => '0000', 'responseDesc' => 'Terminal Group  deleted successfully']);
+                
+                $this->deleteAction($request, $update_tg);
+
+                if ($update_tg->save()) {
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
                  }
              }
              else
              {
-                     return response()->json(['responseCode' => '0400', 'responseDesc' => 'Data Not Found']);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
               }
 
             
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
+    public function addTerminals(Request $request){
+     
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|max:36',
+            'version' => 'required|numeric'
+        ]);
+ 
+        if ($validator->fails()) {
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
 
+        $tgl= TerminalGroupLink::where('terminal_group_id',$request->id);
+        
+        
+        $tg= TerminalGroup::where('id',$request->id)
+        ->where('tenant_id',$request->header('Tenant-id'))
+        ->where('version','=',$request->version);
+        
+        $cntgl = $tgl->get()->count();
+        $cntg = $tg->get()->count();
+        
+       
+
+            
+            try {
+                DB::beginTransaction();
+                if($cntgl>0 && $cntg>0){
+              
+
+
+                        $a  =   [   
+                            "responseCode"=>"0001",
+                            "responseDesc"=>"Data already exist"
+                            ];    
+                    return $this->headerResponse($a,$request);
+            
+                }elseif($cntgl==0 && $cntg>0){
+                    if($request->terminalIds){
+
+                        $dataSet = [];
+                            foreach ($request->terminalIds as $terminal) {
+                                $dataSet[] = [
+                                    'terminal_id'  => $terminal,
+                                    'terminal_group_id'    => $request->id,
+                                    'version'    => 1
+                                ];
+                            }
+                    
+                    //TerminalGroup::where('id',$request->id)->where('version',$request->version)->update(['version' => $request->version+1]);
+                    
+                    $t = TerminalGroup::where([
+                        ['id',$request->id],
+                        ['version',$request->version],
+                        ['tenant_id',$request->header('Tenant-id')]
+                       
+                    ])->first();
+                    $t->version = $request->version + 1;
+                   
+                    $t->save();
+                    
+                    TerminalGroupLink::insert($dataSet);
+                    
+                    }
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
+                }else{
+                    
+                    $a=["responseCode"=>"0200",
+                    "responseDesc"=>"Data Not Found"
+                    ];    
+                return $this->headerResponse($a,$request);
+                }
+            }
+            catch (\Exception $e) {
+                DB::rollBack();
+                $a  =   [
+                    "responseCode"=>"3333",
+                    "responseDesc"=>$e->getMessage()
+                    ];    
+                return $this->failedInssertResponse($a,$request);
+            }
+
+    }
+   
+    public function deleteTerminals(Request $request){
+     
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|max:36',
+            'version' => 'required|numeric'
+        ]);
+ 
+        if ($validator->fails()) {
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+
+        $tgl= TerminalGroupLink::where('terminal_group_id',$request->id);
+        
+        
+        $tg= TerminalGroup::where('id',$request->id)
+        ->where('tenant_id',$request->header('Tenant-id'))
+        ->where('version','=',$request->version);
+        
+        $cntgl = $tgl->get()->count();
+        $cntg = $tg->get()->count();
+        
+       
+
+            
+            try {
+                DB::beginTransaction();
+                if($cntgl==0){
+              
+
+
+                        $a  =   [   
+                            "responseCode"=>"0200",
+                            "responseDesc"=>"Data Not Found"
+                            ];    
+                    return $this->headerResponse($a,$request);
+            
+                }elseif($cntgl>0 && $cntg>0){
+                    if($request->terminalIds){
+
+                        foreach ($request->terminalIds as $terminal) {
+                              
+                                TerminalGroupLink::where('terminal_group_id', $request->id)->where('terminal_id', $terminal)->delete();
+                            }
+                        //$org->products()->whereIn('id', $ids)->delete()
+                        
+
+                       
+                    $t = TerminalGroup::where([
+                        ['id',$request->id],
+                        ['version',$request->version],
+                        ['tenant_id',$request->header('Tenant-id')]
+                       
+                    ])->first();
+                    $t->version = $request->version + 1;
+                   
+                    $t->save();
+                    
+                     
+                    }
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
+                }else{
+                    
+                    $a=["responseCode"=>"0200",
+                    "responseDesc"=>"Data Not Found"
+                    ];    
+                return $this->headerResponse($a,$request);
+                }
+            }
+            catch (\Exception $e) {
+                DB::rollBack();
+                $a  =   [
+                    "responseCode"=>"3333",
+                    "responseDesc"=>$e->getMessage()
+                    ];    
+                return $this->failedInssertResponse($a,$request);
+            }
+
+    }
     
 }

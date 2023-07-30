@@ -133,7 +133,7 @@ class CountryController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:50',
             'code' => 'required|max:2',
-            'id' => 'required' 
+            'id' => 'required'
         ]);
  
         if ($validator->fails()) {

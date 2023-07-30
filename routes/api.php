@@ -122,25 +122,35 @@ Route::middleware('HeaderAccess')->group(function($router){
     
     
         /* router terminal group*/ 
-        $router->get('/terminalGroup/list', [TerminalGroupController::class,'list']);
+        $router->get('/terminalGroup/listTerminal', [TerminalGroupController::class,'list']);
         $router->get('/terminalGroup/get', [TerminalGroupController::class,'show']);
         $router->post('/terminalGroup/add', [TerminalGroupController::class,'create']);
         $router->post('/terminalGroup/update', [TerminalGroupController::class,'update']);
         $router->post('/terminalGroup/delete', [TerminalGroupController::class,'delete']);
-        
+        $router->post('/terminalGroup/addTerminals', [TerminalGroupController::class,'addTerminals']);
+        $router->post('/terminalGroup/deleteTerminals', [TerminalGroupController::class,'deleteTerminals']);
+    
+    
         /* router terminal*/ 
         $router->get('/terminal/list', [TerminalController::class,'list']);
         $router->get('/terminal/get', [TerminalController::class,'show']);
         $router->post('/terminal/add', [TerminalController::class,'create']);
         $router->post('/terminal/update', [TerminalController::class,'update']);
+        $router->post('/terminal/delete', [TerminalController::class,'delete']);
         $router->post('/terminal/restart', [TerminalController::class,'restart']);
         $router->post('/terminal/lockUnlock', [TerminalController::class,'lockUnlock']);
     
         /* router download task*/ 
-        $router->get('/downloadtask/list', [DownloadTaskController::class,'list']);
-        $router->get('/downloadtask/get',  [DownloadTaskController::class,'show']);
-        $router->post('/downloadtask/add',  [DownloadTaskController::class,'create']);
-        $router->post('/downloadtask/update',  [DownloadTaskController::class,'update']);
+        $router->get('/downloadTask/list', [DownloadTaskController::class,'list']);
+        $router->get('/downloadTask/listTerminal', [DownloadTaskController::class,'listTerminal']);
+        $router->get('/downloadTask/listTerminalGroup', [DownloadTaskController::class,'listGroup']);
+        $router->get('/downloadTask/get',  [DownloadTaskController::class,'show']);
+        $router->post('/downloadTask/add',  [DownloadTaskController::class,'create']);
+        $router->post('/downloadTask/update',  [DownloadTaskController::class,'update']);
+        $router->post('/downloadTask/delete',  [DownloadTaskController::class,'delete']);
+        $router->post('/downloadTask/cancel',  [DownloadTaskController::class,'cancel']);
+        $router->post('/downloadTask/history',  [DownloadTaskController::class,'history']);
+        $router->post('/downloadTask/terminalHistory',  [DownloadTaskController::class,'terminalHistory']);
     
         /* router delete task*/ 
         $router->get('/deleteTask/list', [DeleteTaskController::class,'list']);

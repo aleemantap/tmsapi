@@ -641,17 +641,18 @@ class DownloadTaskController extends Controller
 
                 $query = DownloadTask::select(
                     'tms_terminal.model_id as id',
-                    'tms_download_task.id',
                     'tms_download_task.status',
-                    'tms_terminal.id',
                     'tms_terminal.sn',
-                    'tms_download_task.update_ts'
+                    'tms_download_task.update_ts as lastUpdateTime'
                 )
-                ->where('tms_download_task.id',$request->id)->whereNull('tms_download_task.deleted_by')
+                ->where('tms_download_task.id',$request->id)->where('tms_download_task.tenant_id',$request->header('Tenant-id'))->whereNull('tms_download_task.deleted_by')
                 ->join('tms_download_task_terminal_link', 'tms_download_task.id', '=', 'tms_download_task_terminal_link.download_task_id')
                 ->join('tms_terminal', 'tms_terminal.id', '=', 'tms_download_task_terminal_link.terminal_id')
                 ;
 
+                if($request->sn != ''){
+                    $query->where('tms_terminal.sn', 'ILIKE', '%' . $request->sn . '%');
+                }
             
                 $count = $query->get()->count();
             
@@ -686,4 +687,64 @@ class DownloadTaskController extends Controller
             return $this->headerResponse($a,$request);
         }
     }    
+
+    /**
+     * Summary of terminalHistory
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function terminalHistory(Request $request){
+
+        try {
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
+
+                $query = DownloadTask::select(
+                    'tms_terminal.model_id as id',
+                    'tms_download_task.status',
+                    'tms_terminal.sn',
+                    'tms_download_task.update_ts as lastUpdateTime'
+                )
+                ->where('tms_download_task.id',$request->id)->where('tms_download_task.tenant_id',$request->header('Tenant-id'))->whereNull('tms_download_task.deleted_by')
+                ->join('tms_download_task_terminal_link', 'tms_download_task.id', '=', 'tms_download_task_terminal_link.download_task_id')
+                ->join('tms_terminal', 'tms_terminal.id', '=', 'tms_download_task_terminal_link.terminal_id')
+                ;
+
+                if($request->terminalId != ''){
+                    $query->where('tms_terminal.id', 'ILIKE', '%' . $request->terminalId . '%');
+                }
+            
+                $count = $query->get()->count();
+            
+                $results = $query->offset(($pageNum-1) * $pageSize) 
+                ->limit($pageSize)->orderBy('tms_download_task.create_ts', 'DESC')
+                ->get()->makeHidden(['tms_download_task.deleted_by','tms_download_task.delete_ts']);
+                
+                if($count > 0)
+                {
+                    $a=['responseCode' => '0000', 
+                        'responseDesc' => "OK",
+                        'pageSize'  =>  $pageSize,
+                        'totalPage' => ceil($count/$pageSize),
+                        'total' => $count,
+                        'rows' => $results
+                        ];    
+                        return $this->listResponse($a,$request);
+                }
+                else
+                {
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => $results
+                    ];    
+                return $this->headerResponse($a,$request);
+                }
+                
+        } catch (\Exception $e) {
+            $a=["responseCode"=>"3333",
+            "responseDesc"=>$e->getMessage()
+            ];    
+            return $this->headerResponse($a,$request);
+        }
+    }   
 }

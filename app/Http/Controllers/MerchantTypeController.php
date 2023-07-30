@@ -13,9 +13,8 @@ class MerchantTypeController extends Controller
 
         try {
 
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
-                
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $query = MerchantType::
                 select('id','name','description','version','created_by as createdBy', 'create_ts as createdTime','updated_by as lastUpdateBy','update_ts as lastUpdateTime')->
                 whereNull('deleted_by');
@@ -167,7 +166,7 @@ class MerchantTypeController extends Controller
             {
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $district
+                 "data" => $mt
                 ];    
                 return $this->headerResponse($a,$request);
             }
