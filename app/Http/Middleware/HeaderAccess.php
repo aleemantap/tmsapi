@@ -15,11 +15,7 @@ class HeaderAccess
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
      * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
-    // public function handle(Request $request, Closure $next)
-    // {
-    //     return $next($request);
-    // }
-
+   
     // public function handle(Request $request, Closure $next) {
     //     if (Auth::check() && Auth::user()->type == 'admin')  {
     //       return $next($request);
