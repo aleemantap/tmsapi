@@ -74,6 +74,18 @@ class Controller extends BaseController
          ->header('Reference-Number',$request->header('Reference-Number'))
          ->header('Response-Timestamp',date('Y-m-d H:i:s'));
     }
-   
+   /**
+    * Summary of deleteAction
+    * @param mixed $request
+    * @param mixed $objDelete
+    * @return void
+    */
+   public function deleteAction($request, $objDelete){
+
+                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
+                $objDelete->delete_ts = $current_date_time; 
+                $objDelete->deleted_by = $request->header('X-Consumer-Username');
+
+   }
     
 }

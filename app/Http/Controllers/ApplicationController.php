@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\Application;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
@@ -54,16 +55,16 @@ class ApplicationController extends Controller
        
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:100|unique:tms_application',
-            'package_name' =>  'required|max:255|unique:tms_application',
-            'app_version' => 'required|max:50',
+            'packageName' =>  'required|max:255|unique:tms_application,package_name',
+            'appVersion' => 'required|max:50',
             'description' => 'max:255',
             'uninstallable'=>  'boolean',  
-            'company_name'=>  'required|max:100', 
-            'checksum' => 'required|max:32', 
-            'unique_name' => 'required|max:50', 
-            'unique_icon_name' => 'required|max:50', 
-            'tenant_id' => 'required|max:50', 
-            'icon_url' => 'required|max:255', 
+            'companyName'=>  'required|max:100', 
+            //'checksum' => 'required|max:32', 
+            //'unique_name' => 'required|max:50', 
+            //'unique_icon_name' => 'required|max:50', 
+            //'tenant_id' => 'required|max:50', 
+            //'icon_url' => 'required|max:255', 
         ]);
  
         if ($validator->fails()) {
@@ -72,40 +73,58 @@ class ApplicationController extends Controller
                                     );
         }
 
+        DB::beginTransaction();
         try {
 
+            $cloud = \Storage::cloud();
+
             $path =null;
-            if($request->file('icon_url'))
+            if($request->file('icon'))
             {
-                $path = \Storage::cloud()->put('files', $request->file('icon_url'));
+                $path =$cloud->put(env('MINIO_BUCKET_ICON_PATH_SERVER'), $request->file('icon'));
             }
+            
+            $path2 =null;
+            if($request->file('apk'))
+            {
+                $path2 = $cloud->put(env('MINIO_BUCKET_APP_PATH_SERVER'), $request->file('apk'));
+            } 
+
             //$url=\Storage::cloud()->temporaryUrl($path, \Carbon\Carbon::now()->addMinutes(1));
         
 
             $app = new Application();
             $app->version = 1; 
             $app->name = $request->name;
-            $app->package_name = $request->package_name;
-            $app->app_version = $request->app_version;
+            $app->package_name = $request->packageName;
+            $app->app_version = $request->appVersion;
             $app->description = $request->description;
             $app->uninstallable = $request->uninstallable;
-            $app->company_name = $request->company_name;
-            $app->checksum = $request->checksum;
-            $app->unique_name = $request->unique_name;
-            $app->unique_icon_name = $request->unique_icon_name;
+            $app->company_name = $request->companyName;
+            $app->checksum = MD5($request->file('apk'));
+            $app->unique_name = substr($path2,6);
+            $app->unique_icon_name = substr($path,6);//$request->name.'-ICO-'.date('YmdHis');
+            //$app->apk = $request->apk;
             $app->icon_url = $path;
-            $app->tenant_id = $request->tenant_id;
+            $app->tenant_id = $request->header('tenant-id');
         
             if ($app->save()) {
-                return response()->json(['responseCode' => '0000', //sukses insert
-                                          'responseDesc' => 'Application created successfully',
-                                          'generatedId' =>  $app->id
-                                        ]);
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                    "generatedId" =>  $app->id
+                    ];    
+            return $this->headerResponse($a,$request);
+    
             }
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', //gagal exception 
-                                     'responseDesc' => $e->getMessage()
-                                    ]);
+            DB::rollBack();
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
         }
 
     }
@@ -269,7 +288,7 @@ class ApplicationController extends Controller
                                     'url' =>$url,
                                     ]);
         } 
-        catch (\Excception $e)
+        catch (\Exception $e)
         {
             return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
       

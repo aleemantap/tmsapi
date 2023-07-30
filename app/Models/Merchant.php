@@ -34,4 +34,5 @@ class Merchant extends Model
         return $this->belongsTo('App\Models\District');
     }
 
+
 }
