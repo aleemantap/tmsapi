@@ -24,7 +24,26 @@ class  DeleteTask extends Model
    
     public function applications()
     {
-        return $this->belongsToMany(DeleteTaskApp::class, 'tms_delete_task_terminal_link');
+        //return $this->belongshasManyToMany(DeleteTaskApp::class);
+        return $this->hasMany('App\Models\DeleteTaskApp','task_id','id');
+        //return $this->belongsToMany(Application::class, 'tms_download_task_application_link');
+    }
+    
+
+    public function deletetaskapp()
+    {
+       
+        return $this->hasMany('App\Models\DeleteTaskApp','task_id','id');
+    }
+
+    public function deletetaskTerminalLink()
+    {
+        return $this->hasMany('App\Models\DeleteTaskTerminalLink','delete_task_id','id');
+    }
+
+    public function deletetaskTerminalGroupLink()
+    {
+        return $this->hasMany('App\Models\DeleteTaskTerminalGroupLink','delete_task_id','id');
     }
     
 

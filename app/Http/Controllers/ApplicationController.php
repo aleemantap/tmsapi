@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 
 class ApplicationController extends Controller
 {
@@ -68,81 +67,78 @@ class ApplicationController extends Controller
             return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
         }
     }
-
+    
    
-    public function create(Request $request){
+    public function createX(Request $request){
        
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|max:100|unique:tms_application',
-                'packageName' =>  'required|max:255|unique:tms_application,package_name',
-                'appVersion' => 'required|max:50',
-                'description' => 'max:255',
-                'uninstallable'=>  'boolean',  
-                'companyName'=>  'required|max:100', 
-              
-            ]);
-     
-            if ($validator->fails()) {
-                 $a  =   [   
-                    "responseCode"=>"5555",
-                    "responseDesc"=>$validator->errors()
-                    ];    
-                return $this->headerResponse($a,$request);
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|max:100|unique:tms_application',
+            'packageName' =>  'required|max:255|unique:tms_application,package_name',
+            'appVersion' => 'required|max:50',
+            'description' => 'max:255',
+            'uninstallable'=>  'boolean',  
+            'companyName'=>  'required|max:100', 
+          
+        ]);
+ 
+        if ($validator->fails()) {
+             $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+
+        DB::beginTransaction();
+        try {
+
+            $cloud = \Storage::cloud();
+
+            $path =null;
+            if($request->file('icon'))
+            {
+                $path =$cloud->put(env('MINIO_BUCKET_ICON_PATH_SERVER'), $request->file('icon'));
             }
-    
-            DB::beginTransaction();
-            try {
-    
-                $cloud = \Storage::cloud();
-    
-                $path =null;
-                if($request->file('icon'))
-                {
-                    $path =$cloud->put(env('MINIO_BUCKET_ICON_PATH_SERVER'), $request->file('icon'));
-                }
-                
-                $path2 =null;
-                if($request->file('apk'))
-                {
-                    $path2 = $cloud->put(env('MINIO_BUCKET_APP_PATH_SERVER'), $request->file('apk'));
-                } 
-    
-              
-                $app = new Application();
-                $app->version = 1; 
-                $app->name = $request->name;
-                $app->package_name = $request->packageName;
-                $app->app_version = $request->appVersion;
-                $app->description = $request->description;
-                $app->uninstallable = $request->uninstallable;
-                $app->company_name = $request->companyName;
-                $app->checksum = MD5($request->file('apk'));
-                $app->unique_name = substr($path2,6); //apk
-                $app->unique_icon_name = substr($path,6);//icon $request->name.'-ICO-'.date('YmdHis');
-                $app->icon_url = $path;
-                $app->tenant_id = $request->header('tenant-id');
             
-                if ($app->save()) {
-                    DB::commit();
-                    $a  =   [   
-                        "responseCode"=>"0000",
-                        "responseDesc"=>"OK",
-                        "generatedId" =>  $app->id
-                        ];    
-                return $this->headerResponse($a,$request);
+            $path2 =null;
+            if($request->file('apk'))
+            {
+                $path2 = $cloud->put(env('MINIO_BUCKET_APP_PATH_SERVER'), $request->file('apk'));
+            } 
+
+          
+            $app = new Application();
+            $app->version = 1; 
+            $app->name = $request->name;
+            $app->package_name = $request->packageName;
+            $app->app_version = $request->appVersion;
+            $app->description = $request->description;
+            $app->uninstallable = $request->uninstallable;
+            $app->company_name = $request->companyName;
+            $app->checksum = MD5($request->file('apk'));
+            $app->unique_name = substr($path2,6); 
+            $app->unique_icon_name = substr($path,6);
+            $app->icon_url = $path;
+            $app->tenant_id = $request->header('tenant-id');
         
-                }
-            } catch (\Exception $e) {
-                DB::rollBack();
-                $a  =   [
-                    "responseCode"=>"3333",
-                    "responseDesc"=>$e->getMessage()
+            if ($app->save()) {
+                DB::commit();
+                $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                    "generatedId" =>  $app->id
                     ];    
-                return $this->failedInssertResponse($a,$request);
+            return $this->headerResponse($a,$request);
+    
             }
-    
-    
-    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
+        }
 
     }
 
@@ -252,6 +248,7 @@ class ApplicationController extends Controller
             return $this->failedInssertResponse($a,$request);
         }
     }
+    
     
     public function show(Request $request){
         try {
@@ -398,7 +395,6 @@ class ApplicationController extends Controller
             return $this->headerResponse($a,$request);
         }   
     }
-
 
     
 }
