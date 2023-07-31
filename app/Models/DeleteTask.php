@@ -22,6 +22,11 @@ class  DeleteTask extends Model
      * @var string
      */
    
+    public function applications()
+    {
+        return $this->belongsToMany(DeleteTaskApp::class, 'tms_delete_task_terminal_link');
+    }
+    
 
 
 }
