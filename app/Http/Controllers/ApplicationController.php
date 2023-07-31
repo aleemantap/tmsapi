@@ -69,7 +69,7 @@ class ApplicationController extends Controller
     }
     
    
-    public function createX(Request $request){
+    public function create(Request $request){
        
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:100|unique:tms_application',
