@@ -156,7 +156,8 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->get('/deleteTask/list', [DeleteTaskController::class,'list']);
         $router->get('/deleteTask/get', [DeleteTaskController::class,'show']);
         $router->post('/deleteTask/add', [DeleteTaskController::class,'create']);
-        //$router->post('/deleteTask/add', [DeleteTaskController::class,'create']);
+        $router->post('/deleteTask/update', [DeleteTaskController::class,'update']);
+        $router->post('/deleteTask/delete', [DeleteTaskController::class,'delete']);        
         $router->post('/deleteTask/listTerminalGroup', [DeleteTaskController::class,'listTerminalGroup']);
         $router->post('/deleteTask/listTerminal', [DeleteTaskController::class,'listTerminal']);
         $router->post('/deleteTask/history', [DeleteTaskController::class,'history']);
