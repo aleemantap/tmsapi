@@ -122,7 +122,7 @@ class DownloadTaskController extends Controller
 
                 $query = DownloadTask::select(
                     'tms_download_task.id',
-                    'tms_terminal.id',
+                    'tms_terminal.model_id as id',
                     'tms_terminal.sn',
                 )
                 ->where('tms_download_task.id',$request->id)->whereNull('tms_download_task.deleted_by')
@@ -172,12 +172,14 @@ class DownloadTaskController extends Controller
 
                 $query = DownloadTask::select(
                     'tms_download_task.id',
-                    'tms_terminal_group.id',
-                    'tms_terminal_group.name'
+                    'tms_terminal.model_id as id',
+                    'tms_download_task.name'
                 )
                 ->where('tms_download_task.id',$request->id)->whereNull('tms_download_task.deleted_by')
                 ->join('tms_download_task_terminal_group_link', 'tms_download_task.id', '=', 'tms_download_task_terminal_group_link.download_task_id')
                 ->join('tms_terminal_group', 'tms_terminal_group.id', '=', 'tms_download_task_terminal_group_link.group_id')
+                ->join('tms_terminal_group_link', 'tms_terminal_group_link.terminal_group_id', '=', 'tms_terminal_group.id')
+                ->join('tms_terminal', 'tms_terminal.id', '=', 'tms_terminal_group_link.terminal_id')
                 ;
 
             
@@ -641,7 +643,7 @@ class DownloadTaskController extends Controller
 
                 $query = DownloadTask::select(
                     'tms_terminal.model_id as id',
-                    'tms_download_task.status',
+                    'tms_download_task.status as activity',
                     'tms_terminal.sn',
                     'tms_download_task.update_ts as lastUpdateTime'
                 )
@@ -701,7 +703,7 @@ class DownloadTaskController extends Controller
 
                 $query = DownloadTask::select(
                     'tms_terminal.model_id as id',
-                    'tms_download_task.status',
+                    'tms_download_task.status as activity',
                     'tms_terminal.sn',
                     'tms_download_task.update_ts as lastUpdateTime'
                 )
