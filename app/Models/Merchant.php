@@ -16,6 +16,7 @@ class Merchant extends Model
     protected $table = "tms_merchant";
     const CREATED_AT = 'create_ts';
     const UPDATED_AT = 'update_ts';
+	public $timestamps = false;
     protected $hidden = ['type_id','tenant_id','district_id']; 
     /**
      * The name of the "updated at" column.

@@ -15,7 +15,7 @@ class TerminalGroupLink extends Model
     protected $table = "tms_terminal_group_link";
 	const CREATED_AT = 'create_ts';
     const UPDATED_AT = 'update_ts';
-    
+    public $timestamps = false;
 	//public function state()
     //{
     //    return $this->belongsTo('App\Models\State', 'states_id', 'id');

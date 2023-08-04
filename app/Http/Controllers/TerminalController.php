@@ -137,6 +137,8 @@ class TerminalController extends Controller
             $t->tenant_id = $request->header('Tenant-id');
             $t->sn = $request->sn;
             $t->profile_id = $request->profileId;
+            $t->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            
             //$t->is_locked = $request->is_locked;
             //$t->locked_reason = $request->locked_reason;
             
@@ -222,6 +224,8 @@ class TerminalController extends Controller
             $t->merchant_id = $request->merchantId;
             $t->sn = $request->sn;
             $t->profile_id = $request->profileId;
+            $t->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+            
            
             $t->save();
 
@@ -334,10 +338,7 @@ class TerminalController extends Controller
              if( $cn > 0)
              {
                 $update_t = $t->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $update_t->delete_ts = $current_date_time; 
-                $update_t->deleted_by = $request->header('X-Consumer-Username');
-
+                $this->deleteAction($request, $update_t);
                 //TerminalGroupLink::where('terminal_id', $request->id)->delete();
 
                 if ($update_t->save()) {

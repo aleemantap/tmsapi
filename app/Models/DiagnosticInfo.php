@@ -15,7 +15,7 @@ class DiagnosticInfo extends Model
     protected $table = "tms_diagnostic_info";
 	const CREATED_AT = 'create_ts';
     const UPDATED_AT = 'update_ts';
-    
+    public $timestamps = false;
 	//public function state()
     //{
     //    return $this->belongsTo('App\Models\State', 'states_id', 'id');

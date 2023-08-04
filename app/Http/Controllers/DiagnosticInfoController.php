@@ -131,6 +131,7 @@ class DiagnosticInfoController extends Controller
             $di->cell_type =   $request->cell_type;
             $di->cell_strength =   $request->cell_strength;
             $di->installed_apps_string = $request->installed_apps_string;
+            $di->create_ts = \Carbon\Carbon::now()->toDateTimeString();
            
         
             if ($di->save()) {
@@ -215,6 +216,7 @@ class DiagnosticInfoController extends Controller
             $di->cell_type =   $request->cell_type;
             $di->cell_strength =   $request->cell_strength;
             $di->installed_apps_string = $request->installed_apps_string;
+            $di->update_ts = \Carbon\Carbon::now()->toDateTimeString();
           
             
             if ($di->save()) {
@@ -272,9 +274,7 @@ class DiagnosticInfoController extends Controller
              if( $cn > 0)
              {
                 $update = $m->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $update->delete_ts = $current_date_time; 
-                $update->deleted_by = "admin";//Auth::user()->id 
+                $this->deleteAction($request, $update);
                 if ($update->save()) {
                      return response()->json(['responseCode' => '0000', 'responseDesc' => 'Diagnostic Info deleted successfully']);
                  }

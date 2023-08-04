@@ -19,6 +19,7 @@ class State extends Model
     protected $table = "tms_states";
 	const CREATED_AT = 'create_ts';
     const UPDATED_AT = 'update_ts';
+	public $timestamps = false;
     
 
     protected $fillable = [

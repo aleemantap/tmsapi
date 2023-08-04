@@ -94,6 +94,7 @@ class CityController extends Controller
             $city->version = 1; 
             $city->name = $request->name;
             $city->states_id = $request->states_id;
+            $city->create_ts = \Carbon\Carbon::now()->toDateTimeString();
 
             if ($city->save()) {
                 DB::commit();
@@ -143,6 +144,7 @@ class CityController extends Controller
 
             $city->version = $request->version + 1;
             $city->name = $request->name;
+            $city->update_ts = \Carbon\Carbon::now()->toDateTimeString();
             
             if ($city->save()) {
                 DB::commit();
@@ -207,9 +209,7 @@ class CityController extends Controller
              if( $cn > 0)
              {
                 $update_t = $t->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $update_t->delete_ts = $current_date_time; 
-                $update_t->deleted_by = "admin";//Auth::user()->id 
+                $this->deleteAction($request, $update_t);
                 if ($update_t->save()) {
                     DB::commit();
                     $a  =   [   

@@ -16,6 +16,7 @@ class Tenant extends Model
     protected $table = "tms_tenant";
     const CREATED_AT = 'create_ts';
     const UPDATED_AT = 'update_ts';
+	public $timestamps = false;
     /**
      * The name of the "updated at" column.
      *

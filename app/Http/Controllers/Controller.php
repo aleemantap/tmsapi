@@ -10,7 +10,8 @@ use Illuminate\Routing\Controller as BaseController;
 class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
-
+   
+  
     public function successRes($request){
 
         return response()->json([
@@ -82,10 +83,12 @@ class Controller extends BaseController
     */
    public function deleteAction($request, $objDelete){
 
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $objDelete->delete_ts = $current_date_time; 
-                $objDelete->deleted_by = $request->header('X-Consumer-Username');
+        $objDelete->timestamps = false;
+        $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
+        $objDelete->delete_ts = $current_date_time; 
+        $objDelete->deleted_by = $request->header('X-Consumer-Username');
 
    }
+
     
 }

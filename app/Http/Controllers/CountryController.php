@@ -104,6 +104,8 @@ class CountryController extends Controller
             $country->version = 1; 
             $country->code = $request->code;
             $country->name = $request->name;
+            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
+            $country->create_ts = $current_date_time; 
             
             if ($country->save()) {
                 DB::commit();
@@ -156,6 +158,8 @@ class CountryController extends Controller
             $country->version = $request->version + 1;
             $country->code = $request->code;
             $country->name = $request->name;
+            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
+            $country->update_ts = $current_date_time; 
             if ($country->save()) {
                 DB::commit();
                 $a  =   [   
@@ -221,10 +225,10 @@ class CountryController extends Controller
                 ['id',$request->id],
                 ['version', $request->version]
             ])->first();
-            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-            $country->delete_ts = $current_date_time; 
-            $country->deleted_by = "admin";//Auth::user()->id
-            
+            //$current_date_time = \Carbon\Carbon::now()->toDateTimeString();
+            //$country->delete_ts = $current_date_time; 
+            //$country->deleted_by = "admin";//Auth::user()->id
+            $this->deleteAction($request, $country);
             if ($country->save()) {
                 DB::commit();
 

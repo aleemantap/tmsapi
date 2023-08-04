@@ -120,6 +120,7 @@ class ApplicationController extends Controller
             $app->unique_icon_name = substr($path,6);
             $app->icon_url = $path;
             $app->tenant_id = $request->header('tenant-id');
+            $app->create_ts = \Carbon\Carbon::now()->toDateTimeString();
         
             if ($app->save()) {
                 DB::commit();
@@ -215,7 +216,7 @@ class ApplicationController extends Controller
                     //$app->apk = $request->apk;
                     $app->icon_url = $path;
                     $app->tenant_id = $request->header('tenant-id');
-                    
+                    $app->update_ts = \Carbon\Carbon::now()->toDateTimeString();
                 
                     if ($app->save()) {
                         DB::commit();

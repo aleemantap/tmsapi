@@ -15,7 +15,7 @@ class City extends Model
     protected $table = "tms_city";
 	const CREATED_AT = 'create_ts';
     const UPDATED_AT = 'update_ts';
-    
+    public $timestamps = false;
    
 
     //protected $hidden = ['states_id'];

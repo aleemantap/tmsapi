@@ -86,6 +86,7 @@ class StateController extends Controller
             $st->version = 1; 
             $st->name = $request->name;
             $st->country_id = $request->country_id;
+            $st->create_ts = \Carbon\Carbon::now()->toDateTimeString();
 
             if ($st->save()) {
                 DB::commit();
@@ -137,6 +138,7 @@ class StateController extends Controller
 
             $st->version = $request->version + 1;
             $st->name = $request->name;
+            $st->update_ts = \Carbon\Carbon::now()->toDateTimeString();
             
             if ($st->save()) {
                 DB::commit();
@@ -200,10 +202,7 @@ class StateController extends Controller
                 ['id',$request->id],
                 ['version', $request->version]
             ])->first();
-            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-            $state->delete_ts = $current_date_time; 
-            $state->deleted_by = "admin";//Auth::user()->id
-            
+            $this->deleteAction($request, $state);
             if ($state->save()) {
                 DB::commit();
                 $a  =   [   

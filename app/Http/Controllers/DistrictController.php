@@ -88,6 +88,7 @@ class DistrictController extends Controller
             $district->version = 1; 
             $district->name = $request->name;
             $district->city_id = $request->city_id;
+            $district->create_ts = \Carbon\Carbon::now()->toDateTimeString();
 
             if ($district->save()) {
                 DB::commit();
@@ -137,6 +138,8 @@ class DistrictController extends Controller
 
             $district->version = $request->version + 1;
             $district->name = $request->name;
+            $district->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+            
             
             if ($district->save()) {
                 DB::commit();
@@ -195,11 +198,7 @@ class DistrictController extends Controller
         try {
             $district = District::where([['id',$request->id],['version',$request->version]])->first();
 
-            
-            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-            $district->delete_ts = $current_date_time; 
-            $district->deleted_by = "admin";//Auth::user()->id
-            
+            $this->deleteAction($request, $district);
              if($district->count() > 0)
              {
                  if ($district->save()) {

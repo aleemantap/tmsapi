@@ -257,7 +257,7 @@ class DownloadTaskController extends Controller
             $dt->download_time_type = $request->downloadTimeType;
             $dt->tenant_id = $request->header('Tenant-id');
             //$dt->download_url = $request->download_url;
-            
+            $dt->create_ts = \Carbon\Carbon::now()->toDateTimeString();
             $dt->save();
           
             
@@ -390,7 +390,7 @@ class DownloadTaskController extends Controller
                 $dt->installation_time_type = $request->installationTimeType;
                 $dt->installation_time = $request->installationTime;
                 $dt->installation_notification = $request->installationNotification;
-                
+                $dt->update_ts = \Carbon\Carbon::now()->toDateTimeString();
                 $dt->save();
                 
 
@@ -602,7 +602,7 @@ class DownloadTaskController extends Controller
                 $update_t = $t->first();
                 $update_t->version = $request->version + 1; 
                 $update_t->status = 3; 
-                
+                $update_t->update_ts = \Carbon\Carbon::now()->toDateTimeString();
                 $update_t->save();
                 DownloadTaskApplicationLink::where('download_task_id', $request->id)->delete();
                 DownloadTaskTerminalGroupLink::where('download_task_id', $request->id)->delete();

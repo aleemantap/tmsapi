@@ -11,13 +11,18 @@ class BlameableObserver
     public function creating(Model $model)
     {
         $model->created_by = Session::get('X-Consumer-Username');
-        $model->updated_by = Session::get('X-Consumer-Username');//"";//Auth::user()->id;
+        //$model->updated_by = Session::get('X-Consumer-Username');//"";//Auth::user()->id;
+        //$model->timestamps = false;
+        //$model->created_at = \Carbon\Carbon::now()->toDateTimeString();
     }
 
     public function updating(Model $model)
     {
-        $model->updated_by = Session::get('X-Consumer-Username');//app('Illuminate\Http\Request')->header('X-Consumer-Username');//"1";//Auth::user()->id;
        
+            $model->updated_by = Session::get('X-Consumer-Username');            
+            //$current_date_time = \Carbon\Carbon::now()->toDateTimeString();
+            //$model->updated_at = $current_date_time; 
+        
     }
 
 }

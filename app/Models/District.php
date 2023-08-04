@@ -15,7 +15,7 @@ class District extends Model
     protected $table = "tms_district";
 	const CREATED_AT = 'create_ts';
     const UPDATED_AT = 'update_ts';
-    
+    public $timestamps = false;
 
     protected $fillable = [
         'version', 'create_ts', 'created_by', 'update_ts', 'updated_by', 'delete_ts', 'deleted_by', 'name','city_id'

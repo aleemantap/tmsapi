@@ -109,7 +109,8 @@ class TerminalGroupController extends Controller
             $tg->name = $request->name;
             $tg->description = $request->description;
             $tg->tenant_id = $request->header('Tenant-id');
-
+            $tg->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            
             $tg->save();
 
             if($request->terminalIds){
@@ -191,6 +192,7 @@ class TerminalGroupController extends Controller
             $tg->version = $request->version + 1;
             $tg->name = $request->name;
             $tg->description = $request->description;
+            $tg->update_ts = \Carbon\Carbon::now()->toDateTimeString();
                              
         
             $tg->save();

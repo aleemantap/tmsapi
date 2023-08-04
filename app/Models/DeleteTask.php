@@ -16,6 +16,7 @@ class  DeleteTask extends Model
     protected $table = "tms_delete_task";
     const CREATED_AT = 'create_ts';
     const UPDATED_AT = 'update_ts';
+    public $timestamps = false;
     /**
      * The name of the "updated at" column.
      *
@@ -45,6 +46,7 @@ class  DeleteTask extends Model
     {
         return $this->hasMany('App\Models\DeleteTaskTerminalGroupLink','delete_task_id','id');
     }
+
     
 
 

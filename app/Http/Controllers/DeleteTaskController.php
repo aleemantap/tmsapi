@@ -148,6 +148,7 @@ class DeleteTaskController extends Controller
             $dt->delete_time = $request->deleteTime;
             $dt->status = 0;
             $dt->old_status = 0;
+            $dt->create_ts = \Carbon\Carbon::now()->toDateTimeString();
             $dt->tenant_id = $request->header('Tenant-id');
             $dt->save();
 
@@ -271,6 +272,7 @@ class DeleteTaskController extends Controller
             $dt->delete_time = $request->deleteTime;
             //$dta->status = 0;
             //$dta->old_status = 0;
+            $dt->update_ts =  \Carbon\Carbon::now()->toDateTimeString();
             $dt->tenant_id = $request->header('Tenant-id');
             $dt->save();
 
@@ -698,7 +700,8 @@ class DeleteTaskController extends Controller
                 $update_t = $t->first();
                 $update_t->version = $request->version + 1; 
                 $update_t->status = 3; 
-                
+                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
+                $update_t->update_ts = $current_date_time; 
                 $update_t->save();
                 DeleteTaskApp::where('task_id', $request->id)->delete();
                 DeleteTaskTerminalGroupLink::where('delete_task_id', $request->id)->delete();
