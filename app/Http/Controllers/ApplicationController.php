@@ -120,7 +120,7 @@ class ApplicationController extends Controller
             $app->unique_icon_name = substr($path,6);
             $app->icon_url = $path;
             $app->tenant_id = $request->header('tenant-id');
-            $app->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->saveAction($app);
         
             if ($app->save()) {
                 DB::commit();
@@ -216,7 +216,7 @@ class ApplicationController extends Controller
                     //$app->apk = $request->apk;
                     $app->icon_url = $path;
                     $app->tenant_id = $request->header('tenant-id');
-                    $app->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+                    $this->updateAction($app);
                 
                     if ($app->save()) {
                         DB::commit();
@@ -313,9 +313,14 @@ class ApplicationController extends Controller
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $m->first();
-                $this->deleteAction($request, $updateMt);
-                if ($updateMt->save()) {
+               
+                $appli =  DB::table('tms_application')
+                ->where([
+                    ['id',$request->id],
+                    ['version', $request->version]
+                ]);
+                $re = $this->deleteAction($request, $appli);
+                if ($re) {
                     DB::commit();
                       $a  =   [   
                         "responseCode"=>"0000",

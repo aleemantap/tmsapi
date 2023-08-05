@@ -148,7 +148,8 @@ class DeleteTaskController extends Controller
             $dt->delete_time = $request->deleteTime;
             $dt->status = 0;
             $dt->old_status = 0;
-            $dt->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            //$dt->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->saveAction($dt);
             $dt->tenant_id = $request->header('Tenant-id');
             $dt->save();
 
@@ -272,7 +273,7 @@ class DeleteTaskController extends Controller
             $dt->delete_time = $request->deleteTime;
             //$dta->status = 0;
             //$dta->old_status = 0;
-            $dt->update_ts =  \Carbon\Carbon::now()->toDateTimeString();
+            $this->updateAction($dt);
             $dt->tenant_id = $request->header('Tenant-id');
             $dt->save();
 
@@ -441,8 +442,15 @@ class DeleteTaskController extends Controller
                      return $this->headerResponse($a,$request);   
                 }
                
-                $this->deleteAction($request, $update_t);
-                if ($update_t->save()) {
+                $dt =  DB::table('tms_delete_task')
+                ->where([
+                    ['id',$request->id],
+                    ['version', $request->version],
+                    ['tenant_id', $request->header('Tenant-id')]
+                ]);
+                
+                $re = $this->deleteAction($request,$dt);
+                if ($re) {
                     DB::commit();
                       $a  =   [   
                         "responseCode"=>"0000",

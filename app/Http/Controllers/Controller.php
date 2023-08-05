@@ -83,12 +83,25 @@ class Controller extends BaseController
     */
    public function deleteAction($request, $objDelete){
 
-        $objDelete->timestamps = false;
+        //$objDelete->timestamps = false;
         $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-        $objDelete->delete_ts = $current_date_time; 
-        $objDelete->deleted_by = $request->header('X-Consumer-Username');
+       
+       return  $objDelete->update(array('delete_ts' => $current_date_time, 'deleted_by' => $request->header('X-Consumer-Username')));
 
    }
+
+   public function updateAction($obj){
+   
+         $obj->updated_by =  $request->header('X-Consumer-Username');
+         $obj->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+   }
+
+   public function saveAction($obj){
+   
+        $obj->created_by =  $request->header('X-Consumer-Username');
+        $obj->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+
+    }
 
     
 }

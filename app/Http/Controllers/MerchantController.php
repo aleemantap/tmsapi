@@ -136,7 +136,7 @@ class MerchantController extends Controller
             $merchant->district_id = $request->districtId;
             $merchant->zipcode = $request->zipcode;
             $merchant->type_id = $request->merchantTypeId;
-            $merchant->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->saveAction($merchant);
 
             if ($merchant->save()) {
                 DB::commit();
@@ -196,8 +196,7 @@ class MerchantController extends Controller
             $merchant->district_id = $request->districtId;
             $merchant->zipcode = $request->zipcode;
             $merchant->type_id = $request->merchantTypeId;
-            $merchant->update_ts = \Carbon\Carbon::now()->toDateTimeString();
-            
+            $this->updateAction($merchant);
             
             if ($merchant->save()) {
                 DB::commit();
@@ -268,12 +267,18 @@ class MerchantController extends Controller
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $m->first();
-                //$current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                //$updateMt->delete_ts = $current_date_time; 
-                //$updateMt->deleted_by = "admin";//Auth::user()->id 
-                $this->actionDelete($request, $updateMt);
-                if ($updateMt->save()) {
+                
+                $ob =  DB::table('tms_merchant')
+                    ->where([
+                        ['id',$request->id],
+                        ['version', $request->version],
+                        ['tenant_id', $request->header('Tenant-id')]
+
+                    ]);
+            
+                $re = $this->deleteAction($request,$ob);
+               
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

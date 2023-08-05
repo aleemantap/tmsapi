@@ -86,7 +86,7 @@ class StateController extends Controller
             $st->version = 1; 
             $st->name = $request->name;
             $st->country_id = $request->country_id;
-            $st->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->saveAction($st);
 
             if ($st->save()) {
                 DB::commit();
@@ -111,12 +111,29 @@ class StateController extends Controller
 
     public function update(Request $request){
 
-        $validator = Validator::make($request->all(), [
-            'version' => 'required|numeric|max:32',
-            'name' => 'required|max:50',
+       
+
+        $check = State::where([
+            ['id',$request->id],
+            ['version',$request->version],
+        ])->first();
+
+        
+        $appa = [
+            'name' => 'required',
             'country_id' => 'required',
-            'id' => 'required' 
-        ]);
+            'id' => 'required',
+            'version' => 'required'
+          
+        ];
+        
+        if(!empty($check)){
+     
+            $appa['name'] = 'required|max:50|unique:tms_states';
+           
+           
+        }
+        $validator = Validator::make($request->all(),$appa);
  
         if ($validator->fails()) {
             $a  =   [   
@@ -138,7 +155,7 @@ class StateController extends Controller
 
             $st->version = $request->version + 1;
             $st->name = $request->name;
-            $st->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->updateAction($st);
             
             if ($st->save()) {
                 DB::commit();
@@ -198,12 +215,13 @@ class StateController extends Controller
 
         DB::beginTransaction();
         try {
-            $state = State::where([
+            $state =  DB::table('tms_states')
+            ->where([
                 ['id',$request->id],
                 ['version', $request->version]
-            ])->first();
-            $this->deleteAction($request, $state);
-            if ($state->save()) {
+            ]);
+           $st = $this->deleteAction($request, $state);
+            if ($st) {
                 DB::commit();
                 $a  =   [   
                     "responseCode"=>"0000",

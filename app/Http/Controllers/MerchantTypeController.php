@@ -82,7 +82,7 @@ class MerchantTypeController extends Controller
             $merchantType->name = $request->name;
             //$merchantType->created_by = $request->header('Tenant-id');
             $merchantType->description = $request->description;
-            $merchantType->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->saveAction($merchantType);
             if ($merchantType->save()) {
                 DB::commit();
                 $a  =   [   
@@ -131,7 +131,7 @@ class MerchantTypeController extends Controller
             $mt->version = $request->version + 1;
             $mt->name = $request->name;
             $mt->description = $request->description;
-            $mt->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->updateAction($mt);
             
             if ($mt->save()) {
                 DB::commit();
@@ -204,12 +204,14 @@ class MerchantTypeController extends Controller
              $cn = $mt->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $mt->first();
-                //$current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                //$updateMt->delete_ts = $current_date_time; 
-                //$updateMt->deleted_by = "admin";//Auth::user()->id 
-                $this->deleteAction($request, $updateMt);
-                if ($updateMt->save()) {
+                
+                $mt =  DB::table('tms_merchant_type')
+                ->where([
+                    ['id',$request->id],
+                    ['version', $request->version]
+                ]);
+                $re = $this->deleteAction($request, $mt);
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

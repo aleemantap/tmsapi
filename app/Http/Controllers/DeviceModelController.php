@@ -98,8 +98,7 @@ class DeviceModelController extends Controller
             $model->vendor_name = $request->vendorName;
             $model->vendor_country = $request->vendorCountry;
             $model->model_information = $request->modelInformation;
-            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-            $model->create_ts = $current_date_time; 
+            $this->saveAction($model);
         
             if ($model->save()) {
                 DB::commit();
@@ -150,8 +149,8 @@ class DeviceModelController extends Controller
             $dm->vendor_name = $request->vendorName;
             $dm->vendor_country = $request->vendorCountry;
             $dm->model_information = $request->modelInformation;
-            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-            $dm->update_ts = $current_date_time; 
+            
+            $this->updateAction($dm);
           
             
             if ($dm->save()) {
@@ -229,12 +228,14 @@ class DeviceModelController extends Controller
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $m->first();
-                //$current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                //$updateMt->delete_ts = $current_date_time; 
-                //$updateMt->deleted_by = "admin";//Auth::user()->id 
-                $this->deleteAction($request, $updateMt);
-                if ($updateMt->save()) {
+                $dm =  DB::table('tms_device_model')
+                    ->where([
+                        ['id',$request->id],
+                        ['version', $request->version]
+                    ]);
+            
+                $re = $this->deleteAction($request,$dm);
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

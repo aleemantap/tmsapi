@@ -109,7 +109,7 @@ class TerminalGroupController extends Controller
             $tg->name = $request->name;
             $tg->description = $request->description;
             $tg->tenant_id = $request->header('Tenant-id');
-            $tg->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->saveAction($tg);
             
             $tg->save();
 
@@ -192,7 +192,7 @@ class TerminalGroupController extends Controller
             $tg->version = $request->version + 1;
             $tg->name = $request->name;
             $tg->description = $request->description;
-            $tg->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->updateAction($tg);
                              
         
             $tg->save();
@@ -285,9 +285,16 @@ class TerminalGroupController extends Controller
              if( $cn > 0)
              {
                 
-                $this->deleteAction($request, $update_tg);
+                $tg =  DB::table('tms_terminal_group')
+                ->where([
+                    ['id',$request->id],
+                    ['version', $request->version],
+                    ['tenant_id',$request->header('Tenant-id')]
+                ]);
+            
+                $r = $this->deleteAction($request, $tg);
 
-                if ($update_tg->save()) {
+                if ($r) {
                     $a  =   [   
                         "responseCode"=>"0000",
                         "responseDesc"=>"OK"

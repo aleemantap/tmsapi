@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Blameable;
+//use App\Blameable;
 
 /**
  * Summary of DownloadTaskApplicationLink
  */
 class DownloadTaskApplicationLink extends Model 
 {
-    use Blameable;
+    //use Blameable;
 	use HasFactory;
     use Uuid;
        /**

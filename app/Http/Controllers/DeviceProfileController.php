@@ -112,7 +112,7 @@ class DeviceProfileController extends Controller
             }
             $dp->admin_password = $request->adminPassword;
             $dp->front_app = $request->frontApp;
-            $dp->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->saveAction($dp);
             $dp->tenant_id = $request->header('Tenant-id');
         
             if ($dp->save()) {
@@ -209,7 +209,7 @@ class DeviceProfileController extends Controller
             }
             $dp->admin_password = $request->adminPassword;
             $dp->front_app = $request->frontApp;
-            $dp->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+            $this->updateAction($dp);
             $dp->tenant_id = $request->header('Tenant-id');
         
             
@@ -304,9 +304,17 @@ class DeviceProfileController extends Controller
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $m->first();
-                $this->deleteAction($request, $updateMt);
-                if ($updateMt->save()) {
+                
+                $dp =  DB::table('tms_device_profile')
+                ->where([
+                    ['id',$request->id],
+                    ['version', $request->version],
+                    ['tenant_id', $request->header('Tenant-id')],
+
+                ]);
+                
+                $re = $this->deleteAction($request,$dp);
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",
