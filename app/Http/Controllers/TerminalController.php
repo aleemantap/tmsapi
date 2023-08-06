@@ -137,6 +137,8 @@ class TerminalController extends Controller
             $t->tenant_id = $request->header('Tenant-id');
             $t->sn = $request->sn;
             $t->profile_id = $request->profileId;
+            $t->saveAction($request, $t); 
+            
             //$t->is_locked = $request->is_locked;
             //$t->locked_reason = $request->locked_reason;
             
@@ -222,6 +224,8 @@ class TerminalController extends Controller
             $t->merchant_id = $request->merchantId;
             $t->sn = $request->sn;
             $t->profile_id = $request->profileId;
+            $this->updateAction($request, $t);
+            
            
             $t->save();
 
@@ -327,20 +331,19 @@ class TerminalController extends Controller
     public function delete(Request $request){
         DB::beginTransaction();
         try {
-            $t= Terminal::where('id','=',$request->id)
-            ->where('version','=',$request->version)
-            ->where('tenant_id', $request->header('Tenant-id'));
+            $t= DB::table('tms_terminal')
+            ->where([
+                ['id',$request->id],
+                ['version', $request->version],
+                ['tenant_id',$request->header('Tenant-id')]
+            ]);
              $cn = $t->get()->count();
              if( $cn > 0)
              {
-                $update_t = $t->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $update_t->delete_ts = $current_date_time; 
-                $update_t->deleted_by = $request->header('X-Consumer-Username');
+              
+                $re = $this->deleteAction($request,$t);
 
-                //TerminalGroupLink::where('terminal_id', $request->id)->delete();
-
-                if ($update_t->save()) {
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

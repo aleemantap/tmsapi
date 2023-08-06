@@ -88,6 +88,7 @@ class DistrictController extends Controller
             $district->version = 1; 
             $district->name = $request->name;
             $district->city_id = $request->city_id;
+            $this->saveAction($request, $district);
 
             if ($district->save()) {
                 DB::commit();
@@ -137,6 +138,8 @@ class DistrictController extends Controller
 
             $district->version = $request->version + 1;
             $district->name = $request->name;
+            $this->saveAction($request, $district);
+            
             
             if ($district->save()) {
                 DB::commit();
@@ -193,16 +196,16 @@ class DistrictController extends Controller
     public function delete(Request $request){
         DB::beginTransaction();
         try {
-            $district = District::where([['id',$request->id],['version',$request->version]])->first();
-
+           
+            $m = District::where('id','=',$request->id)
+            ->where('version','=',$request->version);
             
-            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-            $district->delete_ts = $current_date_time; 
-            $district->deleted_by = "admin";//Auth::user()->id
-            
-             if($district->count() > 0)
+             if($m->get()->count() > 0)
              {
-                 if ($district->save()) {
+             
+                
+                $re = $this->deleteAction($request,$m);
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

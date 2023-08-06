@@ -13,11 +13,11 @@ class CountryController extends Controller
 	
     public function list(Request $request){
 
-        //return $this->checkTenant($request);
+       
 
         try {   
-            $pageSize = $request->pageSize;
-            $pageNum = $request->pageNum;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
           
             
             $query = Country::select(
@@ -80,8 +80,6 @@ class CountryController extends Controller
     public function create(Request $request){
 
  
-        
-
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:50',
             'code' => 'required|max:2'
@@ -104,7 +102,8 @@ class CountryController extends Controller
             $country->version = 1; 
             $country->code = $request->code;
             $country->name = $request->name;
-            
+            $this->saveAction($request, $country);
+
             if ($country->save()) {
                 DB::commit();
                 $a  =   [   
@@ -130,11 +129,27 @@ class CountryController extends Controller
 
     public function update(Request $request){
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50',
-            'code' => 'required|max:2',
-            'id' => 'required'
-        ]);
+        $check = Country::where([
+            ['id',$request->id],
+            ['name',$request->name],
+        ])->first();
+
+        
+        $appa = [
+            'name' => 'required',
+            'code' => 'required',
+            'id' => 'required',
+            'version' => 'required'
+          
+        ];
+        
+        if(!empty($check)){
+     
+            $appa['name'] = 'required|max:50|unique:tms_country';
+            $appa['code'] = 'required|max:50|unique:tms_country';
+           
+        }
+        $validator = Validator::make($request->all(),$appa);
  
         if ($validator->fails()) {
             $a  =   [   
@@ -149,13 +164,14 @@ class CountryController extends Controller
            
             $country = Country::where([
                 ['id',$request->id],
-                //['code',$request->code],
                 ['version', $request->version]
+                
             ])->first();
 
             $country->version = $request->version + 1;
             $country->code = $request->code;
             $country->name = $request->name;
+            $this->updateAction($request, $country);
             if ($country->save()) {
                 DB::commit();
                 $a  =   [   
@@ -217,15 +233,15 @@ class CountryController extends Controller
     public function delete(Request $request){
         DB::beginTransaction();
         try {
-            $country = Country::where([
+           
+            $country =  DB::table('tms_country')
+            ->where([
                 ['id',$request->id],
                 ['version', $request->version]
-            ])->first();
-            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-            $country->delete_ts = $current_date_time; 
-            $country->deleted_by = "admin";//Auth::user()->id
+            ]);
             
-            if ($country->save()) {
+            $re = $this->deleteAction($request,$country);
+            if ($re) {
                 DB::commit();
 
                  $a  =   [   

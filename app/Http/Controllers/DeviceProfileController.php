@@ -112,6 +112,7 @@ class DeviceProfileController extends Controller
             }
             $dp->admin_password = $request->adminPassword;
             $dp->front_app = $request->frontApp;
+            $this->saveAction($request,$dp);
             $dp->tenant_id = $request->header('Tenant-id');
         
             if ($dp->save()) {
@@ -208,6 +209,7 @@ class DeviceProfileController extends Controller
             }
             $dp->admin_password = $request->adminPassword;
             $dp->front_app = $request->frontApp;
+            $this->updateAction($request, $dp);
             $dp->tenant_id = $request->header('Tenant-id');
         
             
@@ -302,11 +304,8 @@ class DeviceProfileController extends Controller
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $m->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $updateMt->delete_ts = $current_date_time; 
-                $updateMt->deleted_by = "admin";//Auth::user()->id 
-                if ($updateMt->save()) {
+                $re = $this->deleteAction($request,$m);
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

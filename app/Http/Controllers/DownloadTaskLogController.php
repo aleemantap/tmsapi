@@ -90,7 +90,7 @@ class DownloadTaskLogController extends Controller
             $dt->last_broadcast_ts = $request->last_broadcast_ts;
             $dt->old_activity = $request->old_activity;
             $dt->message = $request->message;
-            
+            $dt->create_ts = \Carbon\Carbon::now()->toDateTimeString();
             if ($dt->save()) {
                 return response()->json(['responseCode' => '0000', //sukses insert
                                           'responseDesc' => 'Download Task Log created successfully',
@@ -142,7 +142,7 @@ class DownloadTaskLogController extends Controller
             $dt->last_broadcast_ts = $request->last_broadcast_ts;
             $dt->old_activity = $request->old_activity;
             $dt->message = $request->message;
-           
+            $dt->update_ts = \Carbon\Carbon::now()->toDateTimeString();
 
             if ($dt->save()) {
                 return response()->json(['responseCode' => '0000', //sukses update

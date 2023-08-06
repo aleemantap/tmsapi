@@ -257,7 +257,7 @@ class DownloadTaskController extends Controller
             $dt->download_time_type = $request->downloadTimeType;
             $dt->tenant_id = $request->header('Tenant-id');
             //$dt->download_url = $request->download_url;
-            
+            $this->saveActioin($request,$dt);
             $dt->save();
           
             
@@ -390,7 +390,7 @@ class DownloadTaskController extends Controller
                 $dt->installation_time_type = $request->installationTimeType;
                 $dt->installation_time = $request->installationTime;
                 $dt->installation_notification = $request->installationNotification;
-                
+                $this->updateActioin($request, $dt);
                 $dt->save();
                 
 
@@ -543,14 +543,9 @@ class DownloadTaskController extends Controller
              $cn = $t->get()->count();
              if( $cn > 0)
              {
-                $update_t = $t->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $update_t->delete_ts = $current_date_time; 
-                $update_t->version = $request->version + 1; 
+                
+                $this->deleteAction($request,$t);
 
-                $update_t->deleted_by = $request->header('X-Consumer-Username');
-
-                $update_t->save();
                 DownloadTaskApplicationLink::where('download_task_id', $request->id)->delete();
                 DownloadTaskTerminalGroupLink::where('download_task_id', $request->id)->delete();
                 DownloadTaskTerminalLink::where('download_task_id', $request->id)->delete();
@@ -602,7 +597,8 @@ class DownloadTaskController extends Controller
                 $update_t = $t->first();
                 $update_t->version = $request->version + 1; 
                 $update_t->status = 3; 
-                
+                //$update_t->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+                $this->updateAction($update_t);
                 $update_t->save();
                 DownloadTaskApplicationLink::where('download_task_id', $request->id)->delete();
                 DownloadTaskTerminalGroupLink::where('download_task_id', $request->id)->delete();

@@ -13,9 +13,8 @@ class ApplicationController extends Controller
 
         try {
            
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
-                $name = $request->name;
+                $pageSize = ($request->pageSize)?$request->pageSize:10;
+                $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $query = Application::whereNull('deleted_by')
                 ->select(
                     'id',
@@ -64,7 +63,11 @@ class ApplicationController extends Controller
                 }
                 
         } catch (\Exception $e) {
-            return response()->json(['status' => '3333', 'message' => $e->getMessage()]);
+           
+            $a=["responseCode"=>"3333",
+            "responseDesc"=>$e->getMessage()
+            ];    
+            return $this->headerResponse($a,$request);
         }
     }
     
@@ -120,6 +123,7 @@ class ApplicationController extends Controller
             $app->unique_icon_name = substr($path,6);
             $app->icon_url = $path;
             $app->tenant_id = $request->header('tenant-id');
+            $this->saveAction($request,$app);
         
             if ($app->save()) {
                 DB::commit();
@@ -215,7 +219,7 @@ class ApplicationController extends Controller
                     //$app->apk = $request->apk;
                     $app->icon_url = $path;
                     $app->tenant_id = $request->header('tenant-id');
-                    
+                    $this->updateAction($request, $app);
                 
                     if ($app->save()) {
                         DB::commit();
@@ -312,9 +316,9 @@ class ApplicationController extends Controller
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $m->first();
-                $this->deleteAction($request, $updateMt);
-                if ($updateMt->save()) {
+               
+                $re = $this->deleteAction($request, $m);
+                if ($re) {
                     DB::commit();
                       $a  =   [   
                         "responseCode"=>"0000",

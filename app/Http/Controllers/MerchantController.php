@@ -136,6 +136,7 @@ class MerchantController extends Controller
             $merchant->district_id = $request->districtId;
             $merchant->zipcode = $request->zipcode;
             $merchant->type_id = $request->merchantTypeId;
+            $this->saveAction($request, $merchant);
 
             if ($merchant->save()) {
                 DB::commit();
@@ -195,6 +196,7 @@ class MerchantController extends Controller
             $merchant->district_id = $request->districtId;
             $merchant->zipcode = $request->zipcode;
             $merchant->type_id = $request->merchantTypeId;
+            $this->updateAction($request,$merchant);
             
             if ($merchant->save()) {
                 DB::commit();
@@ -265,11 +267,10 @@ class MerchantController extends Controller
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $m->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $updateMt->delete_ts = $current_date_time; 
-                $updateMt->deleted_by = "admin";//Auth::user()->id 
-                if ($updateMt->save()) {
+            
+                $re = $this->deleteAction($request,$m);
+               
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",
