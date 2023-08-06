@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Merchant extends Model 
 {
-    use Blameable;
+    //use Blameable;
     use HasFactory;
     use Uuid;
 	

@@ -99,9 +99,8 @@ class Controller extends BaseController
    public function saveAction($request,$obj){
    
         $obj->created_by =  $request->header('X-Consumer-Username');
-       // $obj->create_ts = \Carbon\Carbon::now()->toDateTimeString();
-        $obj->create_ts = date('Y-m-d H:i:s.u');//\Carbon\Carbon::now()->toDateTimeString();
-
+        $obj->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+        
     }
 
     
