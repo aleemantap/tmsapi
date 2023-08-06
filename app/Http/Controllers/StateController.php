@@ -199,7 +199,7 @@ class StateController extends Controller
             ->whereNull('deleted_by')
             ->with(['country' => function ($query) {
                 $query->select('id', 'code','name');
-            }])->get();
+            }])->get()->makeHidden('country_id');
             if($state->count()>0)
             {
                 $a=["responseCode"=>"0000",

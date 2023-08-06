@@ -62,7 +62,7 @@ class MerchantTypeController extends Controller
 
         
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50|unique:tms_merchant_type'
+            'name' => 'required|max:50'
             //'description' => 'required' 
         ]);
  
@@ -107,7 +107,7 @@ class MerchantTypeController extends Controller
 
         $validator = Validator::make($request->all(), [
             'version' => 'required|numeric|max:32',
-            'name' => 'required|max:50|unique:tms_merchant_type',
+            'name' => 'required|max:50',
             //'description' => 'required',
             'id' => 'required' 
         ]);

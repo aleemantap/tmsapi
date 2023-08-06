@@ -190,7 +190,7 @@ class TerminalController extends Controller
 
         if(!$check){
          
-            $terminal['sn'] = 'required|max:30|unique:tms_terminal';
+            $terminal['sn'] = 'required|max:30';
         }
         $validator = Validator::make($request->all(), $terminal);
 

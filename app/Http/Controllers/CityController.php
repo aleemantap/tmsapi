@@ -137,7 +137,7 @@ class CityController extends Controller
         if(!empty($check)){
      
             $appa['name'] = 'required|max:50';
-            
+            // ini awalnya ada pengecekan unique choyyy... jadi bikinnya begini..
            
         }
         $validator = Validator::make($request->all(),$appa);
