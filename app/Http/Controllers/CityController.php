@@ -156,7 +156,17 @@ class CityController extends Controller
             $city = City::where([
                 ['id',$request->id],
                 ['version',$request->version]
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
+
+            if(empty($city)){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => null
+                ];    
+                return $this->headerResponse($a,$request); 
+            }
 
             $city->version = $request->version + 1;
             $city->name = $request->name;

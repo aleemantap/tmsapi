@@ -376,10 +376,17 @@ class DownloadTaskController extends Controller
                 ['tenant_id',$request->header('Tenant-id')],
                 ['status','!=',1],
                
-            ])
-            ->whereNull('deleted_by')
-            ;
+            ]);
+            
             $cnt = $dtc->get()->count();
+            
+            if($dtc->whereNull('deleted_by')->get()->count()==0){
+                $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found"
+                    ];    
+                return $this->headerResponse($a,$request);
+                }
+            }
 
             if($cnt>0){
                 $dt->version = $request->version + 1;
@@ -538,9 +545,16 @@ class DownloadTaskController extends Controller
             $t= DownloadTask::where('id','=',$request->id)
             ->where('version','=',$request->version)
             ->where('tenant_id',$request->header('Tenant-id'))
-            ->where('status','=',2)
-            ->whereNull('deleted_by');
+            ->where('status','=',2);
              $cn = $t->get()->count();
+
+             if($t->whereNull('deleted_by')->get()->count()==0){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+                return $this->headerResponse($a,$request);  
+             }
+
              if( $cn > 0)
              {
                 
@@ -589,9 +603,16 @@ class DownloadTaskController extends Controller
             $t= DownloadTask::where('id','=',$request->id)
             ->where('version','=',$request->version)
             ->where('tenant_id',$request->header('Tenant-id'))
-            ->whereIn('status',[1,2])
-            ->whereNull('deleted_by');
+            ->whereIn('status',[1,2]);
+            
              $cn = $t->get()->count();
+
+             if($t->whereNull('deleted_by')->get()->count()==0){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+                return $this->headerResponse($a,$request);  
+             }
              if( $cn > 0)
              {
                 $update_t = $t->first();

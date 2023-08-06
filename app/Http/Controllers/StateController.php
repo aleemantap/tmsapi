@@ -155,8 +155,17 @@ class StateController extends Controller
                 ['id',$request->id],
                 ['version',$request->version]
                 
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
 
+            if(empty($st)){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
+            }
+            
             $st->version = $request->version + 1;
             $st->name = $request->name;
             $st->country_id = $request->country_id;

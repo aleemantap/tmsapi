@@ -188,7 +188,9 @@ class DeviceProfileController extends Controller
                 ['version',$request->version],
                 ['tenant_id', $request->header('Tenant-id')]
                
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
 
             $dp->version = $request->version + 1;
             $dp->name = $request->name;
@@ -300,6 +302,7 @@ class DeviceProfileController extends Controller
         DB::beginTransaction();
         try {
             $m = DeviceProfile::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version)->where('tenant_id', '=', $request->header('Tenant-id'));
              $cn = $m->get()->count();
              if( $cn > 0)

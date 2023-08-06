@@ -41,7 +41,7 @@ class MerchantController extends Controller
                 ->join('tms_city', 'tms_district.city_id', '=', 'tms_city.id')
                 ->join('tms_states', 'tms_city.states_id', '=', 'tms_states.id')
                 ->join('tms_country', 'tms_states.country_id', '=', 'tms_country.id');
-                $query->where('tms_merchant.tenant_id', $request->header('Tenant-id'));
+                $query->where('tms_merchant.tenant_id', $request->header('Tenant-id'))->whereNull('tms_merchant.deleted_by');
               
                 if($request->type_id != '')
                 {
@@ -187,7 +187,16 @@ class MerchantController extends Controller
                 ['version',$request->version],
                 ['tenant_id', $request->header('Tenant-id')]
                
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
+            
+            if(empty($merchant)){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
+            }
 
             $merchant->version = $request->version + 1;
             $merchant->name = $request->name;
@@ -219,6 +228,7 @@ class MerchantController extends Controller
     public function show(Request $request){
         try {
             $merchant = Merchant::where('id', $request->id)
+            ->whereNull('deleted_by')
             ->where('tenant_id',$request->header('Tenant-id'))
             ->select('id','name','company_name as companyName','version','zipcode','address','district_id','type_id','created_by as createdBy','create_ts as CreatedTime','updated_by as lastUpadatedBy','update_ts as lastUpdateTime');
             
@@ -262,6 +272,7 @@ class MerchantController extends Controller
         DB::beginTransaction();
         try {
             $m = Merchant::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version)
             ->where('tenant_id',$request->header('Tenant-id'));
              $cn = $m->get()->count();
