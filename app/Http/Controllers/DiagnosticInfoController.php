@@ -13,8 +13,8 @@ class DiagnosticInfoController extends Controller
 
         try {
 
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $sn = $request->sn;
                 $battery_temp = $request->battery_temp;
                 $battery_percentage = $request->battery_percentage;

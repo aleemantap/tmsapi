@@ -13,10 +13,11 @@ class CityController extends Controller
 
         try {
 
-                $pageSize = ($request->pageSize)?$request->pageSize:10;
-                $pageNum = ($request->pageNum)?$request->pageNum:1;
-                $states_id = $request->states_id;
-                $name = $request->name;
+
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
+            
+
                 $query = City ::select('id','name','version','states_id','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
 
                     ->with(['state' => function ($query) {
@@ -24,9 +25,9 @@ class CityController extends Controller
                         
                     }])
                     ->whereNull('deleted_by');
-                if($request->states_id != '')
+                if($request->stateId != '')
                 {
-                    $query->where('states_id', 'ILIKE', '%' . $request->states_id . '%');
+                    $query->where('states_id', 'ILIKE', '%' . $request->stateId . '%');
                 }
                 if($request->name != '')
                 {

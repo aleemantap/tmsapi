@@ -340,17 +340,18 @@ class TerminalController extends Controller
              $cn = $t->get()->count();
              if( $cn > 0)
              {
-              
-                $re = $this->deleteAction($request,$t);
 
-                if ($re) {
-                    DB::commit();
+              
+                $this->deleteAction($request,$t);
+
+                TerminalGroupLink::where('terminal_id', $request->id)->delete();
+                DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",
                         "responseDesc"=>"OK"
                         ];    
                     return $this->headerResponse($a,$request);
-                 }
+                
              }
              else
              {
