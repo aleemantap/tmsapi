@@ -15,20 +15,8 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\TerminalGroupController;
 use App\Http\Controllers\TerminalController;
 use App\Http\Controllers\DownloadTaskController;
-use App\Http\Controllers\DownloadTaskApplicationLinkController;
-use App\Http\Controllers\DownloadTaskLogController;
-use App\Http\Controllers\DownloadTaskTerminalGroupLinkController;
-use App\Http\Controllers\DownloadTaskTerminalLinkController;
-use App\Http\Controllers\HeartBeatController;
-use App\Http\Controllers\TerminalGroupLinkController;
 use App\Http\Controllers\DeleteTaskController;
-use App\Http\Controllers\DeleteTaskAppController;
-use App\Http\Controllers\DeleteTaskLogController;
-use App\Http\Controllers\DeleteTaskTerminalGroupLinkController;
-use App\Http\Controllers\DeleteTaskTerminalLinkController;
-use App\Http\Controllers\DiagnosticInfoController;
-
-
+//use App\Http\Controllers\HeartBeatController;
 
 
 /*

@@ -57,7 +57,7 @@ class DeviceModelController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -202,7 +202,7 @@ class DeviceModelController extends Controller
            
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $DeviceModel
+                 "data" => null
                 ];    
             return $this->headerResponse($a,$request);
             }

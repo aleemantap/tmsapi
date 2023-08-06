@@ -44,7 +44,7 @@ class MerchantTypeController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -167,7 +167,7 @@ class MerchantTypeController extends Controller
             {
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $mt
+                 "data" => null
                 ];    
                 return $this->headerResponse($a,$request);
             }

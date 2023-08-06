@@ -48,7 +48,7 @@ class DistrictController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -175,7 +175,7 @@ class DistrictController extends Controller
             {
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $district
+                 "data" => null
                 ];    
             return $this->headerResponse($a,$request);
             }

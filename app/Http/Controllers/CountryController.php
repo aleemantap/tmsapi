@@ -62,7 +62,7 @@ class CountryController extends Controller
                 }else{
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -196,8 +196,10 @@ class CountryController extends Controller
 
         try {
             //$country = Country::where('id',$request->id)->get();
-            $country = Country::select('id', 'code', 'name', 'version','created_by as createdBy', 'create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')->
-            where('id',$request->id)->get();
+            $country = Country::select('id', 'code', 'name', 'version','created_by as createdBy', 'create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+            ->where('id',$request->id)
+            ->whereNull('deleted_by')
+            ->get();
 
             if($country->count()>0)
             {
@@ -213,7 +215,7 @@ class CountryController extends Controller
               
                 $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                     "data" => $country
+                     "data" => null
                     ];    
                 return $this->headerResponse($a,$request);
             }
@@ -235,21 +237,33 @@ class CountryController extends Controller
         try {
            
             $country =  DB::table('tms_country')
+            ->whereNull('deleted_by')
             ->where([
                 ['id',$request->id],
                 ['version', $request->version]
             ]);
             
-            $re = $this->deleteAction($request,$country);
-            if ($re) {
-                DB::commit();
+            if($country->get()->count()>0){
 
-                 $a  =   [   
-                "responseCode"=>"0000",
-                "responseDesc"=>"OK"
-                ];    
-            return $this->headerResponse($a,$request);
+                $re = $this->deleteAction($request,$country);
+                if ($re) {
+                    DB::commit();
+
+                    $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK"
+                    ];    
+                return $this->headerResponse($a,$request);
+                }
+            }else
+            {
+            $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found"
+                   
+                    ];    
+                return $this->headerResponse($a,$request);
             }
+        
         } catch (\Exception $e) {
             DB::rollBack();
             $a  =   [   

@@ -58,7 +58,7 @@ class ApplicationController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                     return $this->headerResponse($a,$request);
 
@@ -294,7 +294,7 @@ class ApplicationController extends Controller
             {
                 $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    "data" => []
+                    "data" => null
                 ];    
                 return $this->headerResponse($a,$request);
             }

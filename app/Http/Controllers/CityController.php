@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\City;
+use App\Models\Country;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
@@ -77,7 +78,7 @@ class CityController extends Controller
 
         
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50|unique:tms_city',
+            'name' => 'required|max:50',
             'states_id' => 'required' 
         ]);
  
@@ -135,7 +136,7 @@ class CityController extends Controller
         
         if(!empty($check)){
      
-            $appa['name'] = 'required|max:50|unique:tms_city';
+            $appa['name'] = 'required|max:50';
             
            
         }
@@ -154,12 +155,12 @@ class CityController extends Controller
 
             $city = City::where([
                 ['id',$request->id],
-                ['version',$request->version],
-                ['states_id', $request->states_id]
+                ['version',$request->version]
             ])->first();
 
             $city->version = $request->version + 1;
             $city->name = $request->name;
+            $city->states_id = $request->states_id;
             $this->updateAction($request,$city);
             
             if ($city->save()) {
@@ -183,6 +184,7 @@ class CityController extends Controller
     public function show(Request $request){
         try {
             $city = City::select('id', 'name','version','states_id','created_by as createdBy', 'create_ts as createdTime','updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+            ->whereNull('deleted_by')
             ->where('id', 'ILIKE', '%' . $request->id . '%')->with(['state' => function ($query) {
                 $query->select('id', 'name');
             }])->get()->makeHidden(['states_id']);
@@ -198,7 +200,7 @@ class CityController extends Controller
             {
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $city
+                 "data" => null
                 ];    
             return $this->headerResponse($a,$request);
             }
@@ -220,12 +222,13 @@ class CityController extends Controller
         DB::beginTransaction();
         try {
             $t= City::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version);
              $cn = $t->get()->count();
              if( $cn > 0)
              {
                 //$update_t = $t->first();
-                $re =$this->deleteAction($request, $t);
+                $re = $this->deleteAction($request, $t);
                 if ($re) {
                     DB::commit();
                     $a  =   [   
