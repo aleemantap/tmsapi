@@ -142,7 +142,16 @@ class DeviceModelController extends Controller
                 ['id',$request->id],
                 ['version',$request->version]
                
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
+            
+            if(empty($dm)){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+                return $this->headerResponse($a,$request);
+            }
 
             $dm->version = $request->version + 1;
             $dm->model = $request->model;
@@ -224,17 +233,14 @@ class DeviceModelController extends Controller
         DB::beginTransaction();
         try {
             $m = DeviceModel::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version);
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                // $dm =  DB::table('tms_device_model')
-                //     ->where([
-                //         ['id',$request->id],
-                //         ['version', $request->version]
-                //     ]);
+               
             
-                $re = $this->deleteAction($request,$m);
+                $re = $this->deleteAction($request, $m);
                 if ($re) {
                     DB::commit();
                     $a  =   [   

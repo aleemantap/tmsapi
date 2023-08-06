@@ -185,13 +185,16 @@ class ApplicationController extends Controller
             return $this->headerResponse($a,$request);
         }
 
+        DB::beginTransaction();
         try {
 
             $app = Application::where([
                 ['id',$request->id],
                 ['version',$request->version]
                
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
             
             if(!empty($app))
             {
@@ -316,6 +319,7 @@ class ApplicationController extends Controller
         DB::beginTransaction();
         try {
             $m = Application::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version);
              $cn = $m->get()->count();
              if( $cn > 0)

@@ -251,15 +251,20 @@ class DeleteTaskController extends Controller
         DB::beginTransaction();
         try {
 
-            $dt = DeleteTask::where([
+            $arrWhere = [
                 ['id',$request->id],
                 ['version',$request->version],
                 ['status',1],
                 ['tenant_id', $request->header('Tenant-id')],
-               
-            ])->first();
+           ];
+
+            $dt = DeleteTask::where($arrWhere);
             
-            if(empty($dt)){
+            
+            
+            
+            
+            if(empty($dt->first())){
 
                 $a=["responseCode"=>"0500",
                     "responseDesc"=>"Status data not for update",
@@ -267,6 +272,16 @@ class DeleteTaskController extends Controller
                 ];    
                 return $this->headerResponse($a,$request);    
             }
+            
+            if(empty($dt->whereNull('deleted_by')->first())){
+
+                $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => null
+                    ];    
+                return $this->headerResponse($a,$request);   
+            }
+            
 
             $dt->version = $request->version + 1;
             $dt->name  =  $request->name;
@@ -428,11 +443,12 @@ class DeleteTaskController extends Controller
         try {
             $t= DeleteTask::where('id','=',$request->id)
             ->where('version','=',$request->version)
+            ->whereNull('deleted_by')
             ->where('tenant_id','=',$request->header('Tenant-id'));
              $cn = $t->get()->count();
              if( $cn > 0)
              {
-                $update_t = $t->first();
+                
 
                 if($t->get()[0]['status'] == '2' )
                 {
@@ -709,11 +725,20 @@ class DeleteTaskController extends Controller
             $t= DeleteTask::where('id','=',$request->id)
             ->where('version','=',$request->version)
             ->where('tenant_id',$request->header('Tenant-id'))
-            ->whereIn('status',[1,2])
-            ->whereNull('deleted_by');
+            ->whereIn('status',[1,2]);
              $cn = $t->get()->count();
+
+             
              if( $cn > 0)
              {
+                if(empty($t->WhereNull('deleted_by')->first())){
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found"
+                    
+                    ];    
+                return $this->headerResponse($a,$request);
+                }
+
                 $update_t = $t->first();
                 $update_t->version = $request->version + 1; 
                 $update_t->status = 3; 

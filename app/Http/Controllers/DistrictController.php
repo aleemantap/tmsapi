@@ -16,6 +16,7 @@ class DistrictController extends Controller
             $pageSize = ($request->pageSize)?$request->pageSize:10;
             $pageNum = ($request->pageNum)?$request->pageNum:1;
                  $query = District::select('id','name','city_id','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdateBy','update_ts as lastUpdatedTime')
+                 ->whereNull('deleted_by')
                     ->with(['city' => function ($query) {
                         $query->select('id', 'name');
                     }]);
@@ -132,13 +133,22 @@ class DistrictController extends Controller
                 ['id',$request->id],
                 ['version',$request->version],
                 ['city_id', $request->city_id]
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
 
+            if(empty($district)){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
+            }
+            
             $district->version = $request->version + 1;
             $district->name = $request->name;
             $this->saveAction($request, $district);
             
-            
+           
             if ($district->save()) {
                 DB::commit();
                 $a  =   [   
@@ -160,6 +170,7 @@ class DistrictController extends Controller
     public function show(Request $request){
         try {
             $district = District::select('id','name','version','city_id','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+            ->whereNull('deleted_by')
             ->where('id', $request->id)->with(['city' => function ($query) {
                 $query->select('id', 'name');
             }])->get()->makeHidden(['city_id']);
@@ -196,6 +207,7 @@ class DistrictController extends Controller
         try {
            
             $m = District::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version);
             
              if($m->get()->count() > 0)

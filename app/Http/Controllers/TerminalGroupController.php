@@ -187,7 +187,14 @@ class TerminalGroupController extends Controller
                 ['tenant_id',$request->header('Tenant-id')]
 
                
-            ])->first();
+            ])->whereNull('deleted_by');
+
+            if($tg->get()->count()==0){
+                $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found"
+                    ];    
+                return $this->headerResponse($a,$request);
+            }
 
             $tg->version = $request->version + 1;
             $tg->name = $request->name;
@@ -280,6 +287,7 @@ class TerminalGroupController extends Controller
         DB::beginTransaction();
         try {
             $tg= TerminalGroup::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version)
             ->where('tenant_id',$request->header('Tenant-id'));
              $cn = $tg->get()->count();
@@ -289,7 +297,7 @@ class TerminalGroupController extends Controller
              if( $cn > 0)
              {
            
-                $r = $this->deleteAction($request, $tg);
+                $this->deleteAction($request, $tg);
 
                
 
@@ -344,7 +352,8 @@ class TerminalGroupController extends Controller
         
         $tg= TerminalGroup::where('id',$request->id)
         ->where('tenant_id',$request->header('Tenant-id'))
-        ->where('version','=',$request->version);
+        ->where('version','=',$request->version)
+        ->whereNull('deleted_by');
         
         $cntgl = $tgl->get()->count();
         $cntg = $tg->get()->count();
@@ -436,7 +445,8 @@ class TerminalGroupController extends Controller
         
         $tg= TerminalGroup::where('id',$request->id)
         ->where('tenant_id',$request->header('Tenant-id'))
-        ->where('version','=',$request->version);
+        ->where('version','=',$request->version)
+        ->whereNull('deleted_by');
         
         $cntgl = $tgl->get()->count();
         $cntg = $tg->get()->count();

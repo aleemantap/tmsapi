@@ -17,14 +17,7 @@ class TerminalController extends Controller
         try {
             $pageSize = ($request->pageSize)?$request->pageSize:10;
             $pageNum = ($request->pageNum)?$request->pageNum:1;
-                $model_id = $request->modelId;
-                $merchant_id = $request->merchantId;
-                $sn = $request->sn;
-                $profile_id = $request->profileId;
-                $id = $request->terminalId;
-                
-                //$query1 = TerminalGroupLink::where('terminal_group_id',$request->terminalGroupId);
-                $query = Terminal::select(
+                 $query = Terminal::select(
                     'tms_terminal.id',
                     'tms_terminal.sn',
                     'tms_device_model.model as modelName',
@@ -217,7 +210,16 @@ class TerminalController extends Controller
                 ['version',$request->version],
                 ['tenant_id',$request->header('Tenant-id')]
                
-            ])->first();
+            ])
+            ->whereNull('deleted_by');
+
+            if($t->get()->count()==0){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
+            }
+
             $t->version = $request->version + 1;
             $t->imei = $request->sn;
             $t->model_id = $request->modelId;
@@ -336,7 +338,8 @@ class TerminalController extends Controller
                 ['id',$request->id],
                 ['version', $request->version],
                 ['tenant_id',$request->header('Tenant-id')]
-            ]);
+            ])
+            ->whereNull('deleted_by');
              $cn = $t->get()->count();
              if( $cn > 0)
              {
@@ -390,6 +393,7 @@ class TerminalController extends Controller
         
         try {
             $t= Terminal::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('tenant_id', $request->header('Tenant-id'));
              $cn = $t->get()->count();
              if( $cn > 0)
@@ -444,6 +448,7 @@ class TerminalController extends Controller
         DB::beginTransaction();
         try {
             $t= Terminal::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version)
             ->where('tenant_id', $request->header('Tenant-id'));
              $cn = $t->get()->count();

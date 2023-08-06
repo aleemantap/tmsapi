@@ -126,7 +126,16 @@ class MerchantTypeController extends Controller
                 ['id',$request->id],
                 ['version',$request->version]
                 
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
+
+            if(empty($mt)){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
+            }
 
             $mt->version = $request->version + 1;
             $mt->name = $request->name;
@@ -154,6 +163,7 @@ class MerchantTypeController extends Controller
     public function show(Request $request){
         try {
             $mt = MerchantType::select('id','name','description','version','created_by as createdBy', 'create_ts as createdTime','updated_by as lastUpdateBy','update_ts as lastUpdateTime')
+            ->whereNull('deleted_by')
             ->where('id', $request->id)->get();
             if($mt->count()>0)
             {
@@ -200,7 +210,8 @@ class MerchantTypeController extends Controller
 
         DB::beginTransaction();
         try {
-            $mt = MerchantType::where([['id','=',$request->id],['version','=',$request->version]]);
+            $mt = MerchantType::where([['id','=',$request->id],['version','=',$request->version]])
+            ->whereNull('deleted_by');
              $cn = $mt->get()->count();
              if( $cn > 0)
              {
