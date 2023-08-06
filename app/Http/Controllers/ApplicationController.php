@@ -13,8 +13,10 @@ class ApplicationController extends Controller
 
         try {
            
-                $pageSize = ($request->pageSize)?$request->pageSize:10;
-                $pageNum = ($request->pageNum)?$request->pageNum:1;
+
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
+
                 $query = Application::whereNull('deleted_by')
                 ->select(
                     'id',
@@ -63,11 +65,13 @@ class ApplicationController extends Controller
                 }
                 
         } catch (\Exception $e) {
-           
-            $a=["responseCode"=>"3333",
-            "responseDesc"=>$e->getMessage()
-            ];    
-            return $this->headerResponse($a,$request);
+
+            $a  =   [
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->failedInssertResponse($a,$request);
+
         }
     }
     
@@ -355,9 +359,11 @@ class ApplicationController extends Controller
         ]);
  
         if ($validator->fails()) {
-            return response()->json(['responseCode' => '5555', //gagal validasi
-                                     'responseDesc' => $validator->errors()]
-                                    );
+            $a  = [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
         }    
         
         try {
