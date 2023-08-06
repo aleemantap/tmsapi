@@ -248,32 +248,36 @@ class TerminalGroupController extends Controller
             if($tg->get()->count()>0)
             {
                 $tg =  $tg->get()->makeHidden(['deleted_by', 'delete_ts']);
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' => $tg
-                    
-                ]);
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                     "data" => $tg
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             else
             {
            
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' => []                   
-                ]);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => $tg
+                ];    
+            return $this->headerResponse($a,$request);
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
 
     public function delete(Request $request){
+        DB::beginTransaction();
         try {
             $tg= TerminalGroup::where('id','=',$request->id)
             ->where('version','=',$request->version)
@@ -286,21 +290,26 @@ class TerminalGroupController extends Controller
              {
                 
                 $this->deleteAction($request, $update_tg);
+                
+                TerminalGroupLink::where('terminal_group_id', $request->id)->delete();
 
-                if ($update_tg->save()) {
+                $update_tg->save();
+                
+                    DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",
                         "responseDesc"=>"OK"
                         ];    
                     return $this->headerResponse($a,$request);
-                 }
+                 
              }
              else
              {
-                $a=["responseCode"=>"0400",
-                "responseDesc"=>"Data Not Found"
-                ];    
-            return $this->headerResponse($a,$request);
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
               }
 
             

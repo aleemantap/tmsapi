@@ -14,15 +14,16 @@ class StateController extends Controller
 
         try {
 
-            $pageSize = ($request->pageSize)?$request->pageSize:10;
-            $pageNum = ($request->pageNum)?$request->pageNum:1;
-                $country_id = $request->countryId;
-                $name = $request->name;
-                $query = State::select('id','country_id','name','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')->whereNull('deleted_by')
-                    ->with(['country' => function ($query) {
-                        $query->select('id', 'code','name');
-                    }]);
-                if($request->country_id != '')
+                $pageSize = ($request->pageSize)?$request->pageSize:10;
+                $pageNum = ($request->pageNum)?$request->pageNum:1;
+                $query = 
+                State::select('id','country_id','name','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+                ->whereNull('deleted_by')
+                ->with(['country' => function ($query) {
+                    $query->select('id', 'code','name');
+                }]);
+                
+                if($request->countryId != '')
                 {
                     $query->where('country_id', 'ILIKE', '%' . $request->countryId . '%');
                 }

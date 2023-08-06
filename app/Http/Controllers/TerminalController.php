@@ -339,16 +339,17 @@ class TerminalController extends Controller
              {
                 $update_t = $t->first();
                 $this->deleteAction($request, $update_t);
-                //TerminalGroupLink::where('terminal_id', $request->id)->delete();
+                TerminalGroupLink::where('terminal_id', $request->id)->delete();
+                $update_t->save();
 
-                if ($update_t->save()) {
+                
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",
                         "responseDesc"=>"OK"
                         ];    
                     return $this->headerResponse($a,$request);
-                 }
+                
              }
              else
              {

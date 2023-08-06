@@ -15,13 +15,11 @@ class DistrictController extends Controller
 
             $pageSize = ($request->pageSize)?$request->pageSize:10;
             $pageNum = ($request->pageNum)?$request->pageNum:1;
-                $city_id = $request->cityId;
-                $name = $request->name;
-                $query = District::select('id','name','city_id','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdateBy','update_ts as lastUpdatedTime')
+                 $query = District::select('id','name','city_id','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdateBy','update_ts as lastUpdatedTime')
                     ->with(['city' => function ($query) {
                         $query->select('id', 'name');
                     }]);
-                if($request->city_id != '')
+                if($request->cityId != '')
                 {
                     $query->where('city_id','ILIKE','%' . $request->cityId . '%');
                 }

@@ -442,23 +442,38 @@ class DeleteTaskController extends Controller
                 }
                
                 $this->deleteAction($request, $update_t);
-                if ($update_t->save()) {
+
+                $update_t->save();
+                DeleteTaskApp::where('task_id',$request->id)->delete();
+                DeleteTaskTerminalGroupLink::where('delete_task_id',$request->id)->delete();
+                DeleteTaskTerminalLink::where('delete_task_id',$request->id)->delete();
+
+
                     DB::commit();
                       $a  =   [   
                         "responseCode"=>"0000",
                         "responseDesc"=>"OK"
                         ];    
                     return $this->headerResponse($a,$request);
-                }
+                
              }
              else
              {
-                     return response()->json(['responseCode' => '0400', 'responseDesc' => 'Data Not Found']);
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
               }
 
             
         } catch (\Exception $e) {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 

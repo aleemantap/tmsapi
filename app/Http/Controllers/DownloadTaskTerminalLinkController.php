@@ -12,8 +12,8 @@ class DownloadTaskTerminalLinkController extends Controller
     public function list(Request $request){
 
         try {
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $download_task_id = $request->download_task_id;
                 $terminal_id = $request->terminal_id;
                
