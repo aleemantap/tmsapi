@@ -82,7 +82,7 @@ class CountryController extends Controller
  
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:50',
-            'code' => 'required|max:2'
+            'code' => 'required|max:2|unique:tms_country'
         ]);
  
         if ($validator->fails()) {
@@ -145,7 +145,7 @@ class CountryController extends Controller
         
         if(!empty($check)){
      
-            $appa['name'] = 'required|max:50|unique:tms_country';
+            $appa['name'] = 'required|max:50';
             $appa['code'] = 'required|max:50|unique:tms_country';
            
         }
@@ -166,7 +166,17 @@ class CountryController extends Controller
                 ['id',$request->id],
                 ['version', $request->version]
                 
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
+
+            if(empty($country)){
+                $a=["responseCode"=>"0400",
+                        "responseDesc"=>"Data Not Found",
+                        'rows' => null
+                        ];    
+                        return $this->headerResponse($a,$request);
+            }
 
             $country->version = $request->version + 1;
             $country->code = $request->code;

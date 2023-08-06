@@ -79,8 +79,8 @@ class ApplicationController extends Controller
     public function create(Request $request){
        
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:100|unique:tms_application',
-            'packageName' =>  'required|max:255|unique:tms_application,package_name',
+            'name' => 'required|max:100',
+            'packageName' =>  'required|max:255',
             'appVersion' => 'required|max:50',
             'description' => 'max:255',
             'uninstallable'=>  'boolean',  
@@ -172,8 +172,8 @@ class ApplicationController extends Controller
         
         if(!empty($check)){
      
-            $appa['name'] = 'required|max:100|unique:tms_application';
-            $appa['packageName'] = 'required|max:255|unique:tms_application,package_name';
+            $appa['name'] = 'required|max:100';
+            $appa['packageName'] = 'required|max:255';
         }
         $validator = Validator::make($request->all(),$appa);
  

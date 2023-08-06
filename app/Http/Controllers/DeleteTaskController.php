@@ -125,7 +125,7 @@ class DeleteTaskController extends Controller
     public function create(Request $request){
      
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50|unique:tms_delete_task',
+            'name' => 'required|max:50',
             'deleteTime' => 'date_format:Y-m-d H:i:s',
             'applications' =>  'required',
             'terminalGroupIds' => 'required_without:terminalIds',
@@ -236,7 +236,7 @@ class DeleteTaskController extends Controller
         
         if(!empty($check)){
      
-            $appa['name'] = 'required|max:50|unique:tms_delete_task';
+            $appa['name'] = 'required|max:50';
            
         }
         $validator = Validator::make($request->all(),$appa);

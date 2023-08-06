@@ -221,7 +221,7 @@ class DownloadTaskController extends Controller
     public function create(Request $request){
      
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50|unique:tms_download_task',
+            'name' => 'required|max:50',
             'publishTimeType' => 'in:1,2',
             'publishTime' => ['required_if:publishTimeType,2','date_format:Y-m-d H:i:s'],
             'downloadTimeType' => 'required|in:1,2',
@@ -347,7 +347,7 @@ class DownloadTaskController extends Controller
         
         if(!$check){
          
-            $DownloadTask['name'] = 'required|max:100|unique:tms_download_task';
+            $DownloadTask['name'] = 'required|max:100';
         }
 
         $validator = Validator::make($request->all(), $DownloadTask);
@@ -386,7 +386,7 @@ class DownloadTaskController extends Controller
                     ];    
                 return $this->headerResponse($a,$request);
                 }
-            }
+            
 
             if($cnt>0){
                 $dt->version = $request->version + 1;
@@ -471,6 +471,18 @@ class DownloadTaskController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function show(Request $request){
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|max:36'
+        ]);
+ 
+        if ($validator->fails()) {
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+        
         try {
             $t = DownloadTask::
             

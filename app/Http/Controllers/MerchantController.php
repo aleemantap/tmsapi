@@ -106,7 +106,7 @@ class MerchantController extends Controller
 
         
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:100|unique:tms_merchant',
+            'name' => 'required|max:100',
             'companyName' => 'required|max:100',
             'address' => 'required|max:255',
             'districtId' => 'required|max:36',
@@ -162,7 +162,7 @@ class MerchantController extends Controller
 
         $validator = Validator::make($request->all(), [
             'version' => 'required|numeric|max:32',
-            'name' => 'required|max:100|unique:tms_merchant',
+            'name' => 'required|max:100',
             'id' => 'required',
             'companyName' => 'required',
             'districtId' => 'required|max:36',
@@ -239,11 +239,29 @@ class MerchantController extends Controller
                     }, 'merchanttype' => function($query){
                         $query->select('id', 'name');
                     }])->get();
+
+                    $jsonM =[
+                        "id" => $merchant[0]['id'],
+                        "name" => $merchant[0]['name'],
+                        "companyName" =>  $merchant[0]['companyName'],
+                        "version" =>  $merchant[0]['version'],
+                        "zipcode" =>  $merchant[0]['zipcode'],
+                        "address" =>  $merchant[0]['address'],
+                        "createdBy" =>  $merchant[0]['createdBy'],
+                        "CreatedTime" =>  $merchant[0]['CreatedTime'],
+                        "lastUpdatedBy" =>  $merchant[0]['lastUpadatedBy'],
+                        "lastUpdatedTime" =>  $merchant[0]['lastUpdateTime'],
+                        'district' => $merchant[0]['district'],
+                        "merchantType" =>  $merchant[0]['merchanttype']
+                    ];
+              
                     
-                    $a=["responseCode"=>"0000",
-                    "responseDesc"=>"OK",
-                     "data" => $merchant
+                    $a=    [
+                     "responseCode"=>"0000",
+                     "responseDesc"=>"OK",
+                     "data" =>  $jsonM
                     ];    
+
                 return $this->headerResponse($a,$request);
             }
             else

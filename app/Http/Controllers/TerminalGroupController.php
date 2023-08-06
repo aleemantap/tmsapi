@@ -89,7 +89,7 @@ class TerminalGroupController extends Controller
     public function create(Request $request){
      
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:100|unique:tms_terminal_group',
+            'name' => 'required|max:100',
             'description' => 'max:255'
         ]);
  
@@ -165,7 +165,7 @@ class TerminalGroupController extends Controller
 
         if(!$check){
          
-            $terminalGrp['name'] = 'required|max:100|unique:tms_terminal_group';
+            $terminalGrp['name'] = 'required|max:100';
         }
         $validator = Validator::make($request->all(), $terminalGrp);
         
