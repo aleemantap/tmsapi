@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class DeviceModel extends Model 
 {
-    use Blameable;
+    
     use HasFactory;
     use Uuid;
 	//protected $primaryKey = 'uuid';

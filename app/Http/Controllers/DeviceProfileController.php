@@ -67,7 +67,7 @@ class DeviceProfileController extends Controller
     public function create(Request $request){
      
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50|unique:tms_device_profile',
+            'name' => 'required|max:50',
             'heartbeatInterval' => 'required|numeric',
             'diagnosticInterval' => 'required|numeric',
             'maskHomeButton'=>  'required|boolean',  
@@ -166,7 +166,7 @@ class DeviceProfileController extends Controller
 
         if(!$check){
          
-            $device['name'] = 'required|max:50|unique:tms_device_profile';
+            $device['name'] = 'required|max:50';
         }
 
         $validator = Validator::make($request->all(), $device);

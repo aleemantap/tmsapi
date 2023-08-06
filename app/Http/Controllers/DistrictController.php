@@ -67,7 +67,7 @@ class DistrictController extends Controller
 
         
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50|unique:tms_district',
+            'name' => 'required|max:50',
             'city_id' => 'required' 
         ]);
  
@@ -113,7 +113,7 @@ class DistrictController extends Controller
 
         $validator = Validator::make($request->all(), [
             'version' => 'required|numeric|max:32',
-            'name' => 'required|max:50|unique:tms_district',
+            'name' => 'required|max:50',
             'city_id' => 'required',
             'id' => 'required' 
         ]);
