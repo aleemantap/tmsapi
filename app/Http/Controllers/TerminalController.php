@@ -124,13 +124,13 @@ class TerminalController extends Controller
 
             $t = new Terminal();
             $t->version = 1; 
-            $t->imei = $request->sn;
+            //$t->imei = $request->sn;
             $t->model_id = $request->modelId;
             $t->merchant_id = $request->merchantId;
             $t->tenant_id = $request->header('Tenant-id');
             $t->sn = $request->sn;
             $t->profile_id = $request->profileId;
-            $t->saveAction($request, $t); 
+            $this->saveAction($request, $t); 
             
             //$t->is_locked = $request->is_locked;
             //$t->locked_reason = $request->locked_reason;
@@ -221,7 +221,7 @@ class TerminalController extends Controller
             }
 
             $t->version = $request->version + 1;
-            $t->imei = $request->sn;
+            //$t->imei = $request->sn;
             $t->model_id = $request->modelId;
             $t->merchant_id = $request->merchantId;
             $t->sn = $request->sn;
@@ -265,6 +265,18 @@ class TerminalController extends Controller
     }
     
     public function show(Request $request){
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|max:36'
+        ]);
+ 
+        if ($validator->fails()) {
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+        
         try {
             $t = Terminal::select(
                 'id',
