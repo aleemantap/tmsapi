@@ -14,17 +14,20 @@ class StateController extends Controller
 
         try {
 
-            $pageSize = ($request->pageSize)?$request->pageSize:10;
-            $pageNum = ($request->pageNum)?$request->pageNum:1;
-                $country_id = $request->countryId;
-                $name = $request->name;
-                $query = State::select('id','country_id','name','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')->whereNull('deleted_by')
-                    ->with(['country' => function ($query) {
-                        $query->select('id', 'code','name');
-                    }]);
-                if($request->country_id != '')
+                $pageSize = ($request->pageSize)?$request->pageSize:10;
+                $pageNum = ($request->pageNum)?$request->pageNum:1;
+                $query = 
+                State::
+                select('id','country_id','name','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+                ->whereNull('deleted_by')
+                
+                ->with(['country' => function ($query) {
+                    $query->select('id', 'code','name');
+                }]);
+                
+                if($request->countryId != '')
                 {
-                    $query->where('country_id', 'ILIKE', '%' . $request->countryId . '%');
+                    $query->where('country_id', '=', $request->countryId);
                 }
                 if($request->name != '')
                 {
@@ -48,7 +51,7 @@ class StateController extends Controller
                 }else{
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -86,6 +89,7 @@ class StateController extends Controller
             $st->version = 1; 
             $st->name = $request->name;
             $st->country_id = $request->country_id;
+            $this->saveAction($request, $st);
 
             if ($st->save()) {
                 DB::commit();
@@ -110,12 +114,30 @@ class StateController extends Controller
 
     public function update(Request $request){
 
-        $validator = Validator::make($request->all(), [
-            'version' => 'required|numeric|max:32',
-            'name' => 'required|max:50',
+       
+
+        $check = State::where([
+            ['id',$request->id],
+            ['version',$request->version],
+            ['name',$request->name]
+        ])->get();
+
+        
+        $appa = [
+            'name' => 'required',
             'country_id' => 'required',
-            'id' => 'required' 
-        ]);
+            'id' => 'required',
+            'version' => 'required'
+          
+        ];
+        
+        if($check->count() == 0){
+     
+            $appa['name'] = 'required|max:50|unique:tms_states';
+           
+           
+        }
+        $validator = Validator::make($request->all(),$appa);
  
         if ($validator->fails()) {
             $a  =   [   
@@ -131,12 +153,15 @@ class StateController extends Controller
 
             $st = State::where([
                 ['id',$request->id],
-                ['version',$request->version],
-                ['country_id', $request->country_id]
+                ['version',$request->version]
+                
             ])->first();
 
             $st->version = $request->version + 1;
             $st->name = $request->name;
+            $st->country_id = $request->country_id;
+
+            $this->updateAction($request, $st);
             
             if ($st->save()) {
                 DB::commit();
@@ -161,7 +186,9 @@ class StateController extends Controller
     public function show(Request $request){
         try {
             $state = State::select('id','name','country_id','version','created_by as createdBy', 'create_ts as createdTime','updated_by as lastUpdatedBy', 'update_ts as lastUpdatedTime')
-            ->where('id', 'ILIKE', '%' . $request->id . '%')->with(['country' => function ($query) {
+            ->where('id', 'ILIKE', '%' . $request->id . '%')
+            ->whereNull('deleted_by')
+            ->with(['country' => function ($query) {
                 $query->select('id', 'code','name');
             }])->get();
             if($state->count()>0)
@@ -176,7 +203,7 @@ class StateController extends Controller
             {
                 $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                     "data" => $state
+                     "data" => null
                     ];    
                 return $this->headerResponse($a,$request);
             }
@@ -196,22 +223,36 @@ class StateController extends Controller
 
         DB::beginTransaction();
         try {
-            $state = State::where([
+        
+            $state =  DB::table('tms_states')
+            ->whereNull('deleted_by')
+            ->where([
                 ['id',$request->id],
                 ['version', $request->version]
-            ])->first();
-            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-            $state->delete_ts = $current_date_time; 
-            $state->deleted_by = "admin";//Auth::user()->id
-            
-            if ($state->save()) {
-                DB::commit();
+            ]);
+             $cn = $state->get()->count();
+             if( $cn > 0)
+             {
+              
+                $re = $this->deleteAction($request, $state);
+
+                if ($re) {
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
+                 }
+             }
+             else
+             {
                 $a  =   [   
-                    "responseCode"=>"0000",
-                    "responseDesc"=>"OK"
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
                     ];    
                 return $this->headerResponse($a,$request);
-            }
+              }
 
             
         } catch (\Exception $e) {

@@ -44,7 +44,7 @@ class MerchantTypeController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -82,7 +82,7 @@ class MerchantTypeController extends Controller
             $merchantType->name = $request->name;
             //$merchantType->created_by = $request->header('Tenant-id');
             $merchantType->description = $request->description;
-
+            $this->saveAction($request, $merchantType);
             if ($merchantType->save()) {
                 DB::commit();
                 $a  =   [   
@@ -131,6 +131,7 @@ class MerchantTypeController extends Controller
             $mt->version = $request->version + 1;
             $mt->name = $request->name;
             $mt->description = $request->description;
+            $this->updateAction($request,$mt);
             
             if ($mt->save()) {
                 DB::commit();
@@ -166,7 +167,7 @@ class MerchantTypeController extends Controller
             {
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $mt
+                 "data" => null
                 ];    
                 return $this->headerResponse($a,$request);
             }
@@ -203,11 +204,9 @@ class MerchantTypeController extends Controller
              $cn = $mt->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $mt->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $updateMt->delete_ts = $current_date_time; 
-                $updateMt->deleted_by = "admin";//Auth::user()->id 
-                if ($updateMt->save()) {
+              
+                $re = $this->deleteAction($request, $mt);
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

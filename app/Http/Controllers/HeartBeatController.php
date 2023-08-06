@@ -96,8 +96,8 @@ class HeartBeatController extends Controller
             $hb->cell_name = $request->cell_name;
             $hb->cell_type = $request->cell_type;
             $hb->cell_strength = $request->cell_strength;
-        
-            if ($model->save()) {
+            $hb->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+            if ($hb->save()) {
                 return response()->json(['responseCode' => '0000', //sukses insert
                                           'responseDesc' => 'Hear Beat created successfully',
                                           'generatedId' =>  $model->id
@@ -149,7 +149,7 @@ class HeartBeatController extends Controller
             $hb->cell_name = $request->cell_name;
             $hb->cell_type = $request->cell_type;
             $hb->cell_strength = $request->cell_strength;
-          
+            $hb->update_ts = \Carbon\Carbon::now()->toDateTimeString();
             
             if ($hb->save()) {
                 return response()->json(['responseCode' => '0000', //sukses update
@@ -206,9 +206,10 @@ class HeartBeatController extends Controller
              if( $cn > 0)
              {
                 $update = $m->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $update->delete_ts = $current_date_time; 
-                $update->deleted_by = "admin";//Auth::user()->id 
+                //$current_date_time = \Carbon\Carbon::now()->toDateTimeString();
+                //$update->delete_ts = $current_date_time; 
+                //$update->deleted_by = "admin";//Auth::user()->id 
+                $this->deleteAction($request, $update);
                 if ($update->save()) {
                      return response()->json(['responseCode' => '0000', 'responseDesc' => 'Hear Beat  deleted successfully']);
                  }

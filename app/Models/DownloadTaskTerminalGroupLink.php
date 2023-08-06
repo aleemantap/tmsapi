@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Blameable;
+//use App\Blameable;
 
 class DownloadTaskTerminalGroupLink extends Model 
 {
-    use Blameable;
+    //use Blameable;
 	use HasFactory;
     use Uuid;
     protected $table = "tms_download_task_terminal_group_link";
