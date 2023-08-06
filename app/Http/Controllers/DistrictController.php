@@ -15,13 +15,12 @@ class DistrictController extends Controller
 
             $pageSize = ($request->pageSize)?$request->pageSize:10;
             $pageNum = ($request->pageNum)?$request->pageNum:1;
-                $city_id = $request->cityId;
-                $name = $request->name;
-                $query = District::select('id','name','city_id','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdateBy','update_ts as lastUpdatedTime')
+                 $query = District::select('id','name','city_id','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdateBy','update_ts as lastUpdatedTime')
+                 ->whereNull('deleted_by')
                     ->with(['city' => function ($query) {
                         $query->select('id', 'name');
                     }]);
-                if($request->city_id != '')
+                if($request->cityId != '')
                 {
                     $query->where('city_id','ILIKE','%' . $request->cityId . '%');
                 }
@@ -50,7 +49,7 @@ class DistrictController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -68,7 +67,7 @@ class DistrictController extends Controller
 
         
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50|unique:tms_district',
+            'name' => 'required|max:50',
             'city_id' => 'required' 
         ]);
  
@@ -88,6 +87,7 @@ class DistrictController extends Controller
             $district->version = 1; 
             $district->name = $request->name;
             $district->city_id = $request->city_id;
+            $this->saveAction($request, $district);
 
             if ($district->save()) {
                 DB::commit();
@@ -113,7 +113,7 @@ class DistrictController extends Controller
 
         $validator = Validator::make($request->all(), [
             'version' => 'required|numeric|max:32',
-            'name' => 'required|max:50|unique:tms_district',
+            'name' => 'required|max:50',
             'city_id' => 'required',
             'id' => 'required' 
         ]);
@@ -133,11 +133,22 @@ class DistrictController extends Controller
                 ['id',$request->id],
                 ['version',$request->version],
                 ['city_id', $request->city_id]
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
 
+            if(empty($district)){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
+            }
+            
             $district->version = $request->version + 1;
             $district->name = $request->name;
+            $this->saveAction($request, $district);
             
+           
             if ($district->save()) {
                 DB::commit();
                 $a  =   [   
@@ -159,6 +170,7 @@ class DistrictController extends Controller
     public function show(Request $request){
         try {
             $district = District::select('id','name','version','city_id','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+            ->whereNull('deleted_by')
             ->where('id', $request->id)->with(['city' => function ($query) {
                 $query->select('id', 'name');
             }])->get()->makeHidden(['city_id']);
@@ -174,7 +186,7 @@ class DistrictController extends Controller
             {
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $district
+                 "data" => null
                 ];    
             return $this->headerResponse($a,$request);
             }
@@ -193,16 +205,17 @@ class DistrictController extends Controller
     public function delete(Request $request){
         DB::beginTransaction();
         try {
-            $district = District::where([['id',$request->id],['version',$request->version]])->first();
-
+           
+            $m = District::where('id','=',$request->id)
+            ->whereNull('deleted_by')
+            ->where('version','=',$request->version);
             
-            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-            $district->delete_ts = $current_date_time; 
-            $district->deleted_by = "admin";//Auth::user()->id
-            
-             if($district->count() > 0)
+             if($m->get()->count() > 0)
              {
-                 if ($district->save()) {
+             
+                
+                $re = $this->deleteAction($request,$m);
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

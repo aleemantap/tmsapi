@@ -50,7 +50,7 @@ class DeviceProfileController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -67,7 +67,7 @@ class DeviceProfileController extends Controller
     public function create(Request $request){
      
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50|unique:tms_device_profile',
+            'name' => 'required|max:50',
             'heartbeatInterval' => 'required|numeric',
             'diagnosticInterval' => 'required|numeric',
             'maskHomeButton'=>  'required|boolean',  
@@ -112,6 +112,7 @@ class DeviceProfileController extends Controller
             }
             $dp->admin_password = $request->adminPassword;
             $dp->front_app = $request->frontApp;
+            $this->saveAction($request,$dp);
             $dp->tenant_id = $request->header('Tenant-id');
         
             if ($dp->save()) {
@@ -165,7 +166,7 @@ class DeviceProfileController extends Controller
 
         if(!$check){
          
-            $device['name'] = 'required|max:50|unique:tms_device_profile';
+            $device['name'] = 'required|max:50';
         }
 
         $validator = Validator::make($request->all(), $device);
@@ -187,7 +188,9 @@ class DeviceProfileController extends Controller
                 ['version',$request->version],
                 ['tenant_id', $request->header('Tenant-id')]
                
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
 
             $dp->version = $request->version + 1;
             $dp->name = $request->name;
@@ -208,6 +211,7 @@ class DeviceProfileController extends Controller
             }
             $dp->admin_password = $request->adminPassword;
             $dp->front_app = $request->frontApp;
+            $this->updateAction($request, $dp);
             $dp->tenant_id = $request->header('Tenant-id');
         
             
@@ -277,7 +281,7 @@ class DeviceProfileController extends Controller
            
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $DeviceProfile
+                 "data" => null
                 ];    
             return $this->headerResponse($a,$request);
             }
@@ -298,15 +302,13 @@ class DeviceProfileController extends Controller
         DB::beginTransaction();
         try {
             $m = DeviceProfile::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version)->where('tenant_id', '=', $request->header('Tenant-id'));
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $m->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $updateMt->delete_ts = $current_date_time; 
-                $updateMt->deleted_by = "admin";//Auth::user()->id 
-                if ($updateMt->save()) {
+                $re = $this->deleteAction($request,$m);
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

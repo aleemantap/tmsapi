@@ -72,7 +72,7 @@ class TerminalGroupController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -89,7 +89,7 @@ class TerminalGroupController extends Controller
     public function create(Request $request){
      
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:100|unique:tms_terminal_group',
+            'name' => 'required|max:100',
             'description' => 'max:255'
         ]);
  
@@ -109,7 +109,8 @@ class TerminalGroupController extends Controller
             $tg->name = $request->name;
             $tg->description = $request->description;
             $tg->tenant_id = $request->header('Tenant-id');
-
+            $this->saveAction($request,$tg);
+            
             $tg->save();
 
             if($request->terminalIds){
@@ -164,7 +165,7 @@ class TerminalGroupController extends Controller
 
         if(!$check){
          
-            $terminalGrp['name'] = 'required|max:100|unique:tms_terminal_group';
+            $terminalGrp['name'] = 'required|max:100';
         }
         $validator = Validator::make($request->all(), $terminalGrp);
         
@@ -186,11 +187,19 @@ class TerminalGroupController extends Controller
                 ['tenant_id',$request->header('Tenant-id')]
 
                
-            ])->first();
+            ])->whereNull('deleted_by');
+
+            if($tg->get()->count()==0){
+                $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found"
+                    ];    
+                return $this->headerResponse($a,$request);
+            }
 
             $tg->version = $request->version + 1;
             $tg->name = $request->name;
             $tg->description = $request->description;
+            $this->updateAction($request, $tg);
                              
         
             $tg->save();
@@ -246,59 +255,70 @@ class TerminalGroupController extends Controller
             if($tg->get()->count()>0)
             {
                 $tg =  $tg->get()->makeHidden(['deleted_by', 'delete_ts']);
-                return response()->json([
-                    'responseCode' => '0000', 
-                    'responseDesc' => 'OK',
-                    'data' => $tg
-                    
-                ]);
+                $a=["responseCode"=>"0000",
+                    "responseDesc"=>"OK",
+                     "data" => $tg
+                    ];    
+                return $this->headerResponse($a,$request);
             }
             else
             {
            
-                return response()->json([
-                    'responseCode' => '0400', 
-                    'responseDesc' => 'Data Not Found',
-                    'data' => []                   
-                ]);
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found",
+                 "data" => null
+                ];    
+            return $this->headerResponse($a,$request);
             }
             
         }
         catch(\Exception $e)
         {
-            return response()->json(['responseCode' => '3333', 'responseDesc' => $e->getMessage()]);
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
         }
     }
 
 
     public function delete(Request $request){
+        DB::beginTransaction();
         try {
             $tg= TerminalGroup::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version)
             ->where('tenant_id',$request->header('Tenant-id'));
              $cn = $tg->get()->count();
 
-             $update_tg = $tg->first();
+            
 
              if( $cn > 0)
              {
-                
-                $this->deleteAction($request, $update_tg);
+           
+                $this->deleteAction($request, $tg);
 
-                if ($update_tg->save()) {
+               
+
+                TerminalGroupLink::where('terminal_group_id', $request->id)->delete();
+
+              DB::commit();
+
                     $a  =   [   
                         "responseCode"=>"0000",
                         "responseDesc"=>"OK"
                         ];    
                     return $this->headerResponse($a,$request);
-                 }
+                 
              }
              else
              {
-                $a=["responseCode"=>"0400",
-                "responseDesc"=>"Data Not Found"
-                ];    
-            return $this->headerResponse($a,$request);
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
               }
 
             
@@ -332,7 +352,8 @@ class TerminalGroupController extends Controller
         
         $tg= TerminalGroup::where('id',$request->id)
         ->where('tenant_id',$request->header('Tenant-id'))
-        ->where('version','=',$request->version);
+        ->where('version','=',$request->version)
+        ->whereNull('deleted_by');
         
         $cntgl = $tgl->get()->count();
         $cntg = $tg->get()->count();
@@ -424,7 +445,8 @@ class TerminalGroupController extends Controller
         
         $tg= TerminalGroup::where('id',$request->id)
         ->where('tenant_id',$request->header('Tenant-id'))
-        ->where('version','=',$request->version);
+        ->where('version','=',$request->version)
+        ->whereNull('deleted_by');
         
         $cntgl = $tgl->get()->count();
         $cntg = $tg->get()->count();

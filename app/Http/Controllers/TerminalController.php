@@ -17,14 +17,7 @@ class TerminalController extends Controller
         try {
             $pageSize = ($request->pageSize)?$request->pageSize:10;
             $pageNum = ($request->pageNum)?$request->pageNum:1;
-                $model_id = $request->modelId;
-                $merchant_id = $request->merchantId;
-                $sn = $request->sn;
-                $profile_id = $request->profileId;
-                $id = $request->terminalId;
-                
-                //$query1 = TerminalGroupLink::where('terminal_group_id',$request->terminalGroupId);
-                $query = Terminal::select(
+                 $query = Terminal::select(
                     'tms_terminal.id',
                     'tms_terminal.sn',
                     'tms_device_model.model as modelName',
@@ -93,7 +86,7 @@ class TerminalController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -137,6 +130,8 @@ class TerminalController extends Controller
             $t->tenant_id = $request->header('Tenant-id');
             $t->sn = $request->sn;
             $t->profile_id = $request->profileId;
+            $t->saveAction($request, $t); 
+            
             //$t->is_locked = $request->is_locked;
             //$t->locked_reason = $request->locked_reason;
             
@@ -195,7 +190,7 @@ class TerminalController extends Controller
 
         if(!$check){
          
-            $terminal['sn'] = 'required|max:30|unique:tms_terminal';
+            $terminal['sn'] = 'required|max:30';
         }
         $validator = Validator::make($request->all(), $terminal);
 
@@ -215,13 +210,24 @@ class TerminalController extends Controller
                 ['version',$request->version],
                 ['tenant_id',$request->header('Tenant-id')]
                
-            ])->first();
+            ])
+            ->whereNull('deleted_by');
+
+            if($t->get()->count()==0){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
+            }
+
             $t->version = $request->version + 1;
             $t->imei = $request->sn;
             $t->model_id = $request->modelId;
             $t->merchant_id = $request->merchantId;
             $t->sn = $request->sn;
             $t->profile_id = $request->profileId;
+            $this->updateAction($request, $t);
+            
            
             $t->save();
 
@@ -307,7 +313,7 @@ class TerminalController extends Controller
            
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $t
+                 "data" => null
                 ];    
             return $this->headerResponse($a,$request);
             }
@@ -327,27 +333,28 @@ class TerminalController extends Controller
     public function delete(Request $request){
         DB::beginTransaction();
         try {
-            $t= Terminal::where('id','=',$request->id)
-            ->where('version','=',$request->version)
-            ->where('tenant_id', $request->header('Tenant-id'));
+            $t= DB::table('tms_terminal')
+            ->where([
+                ['id',$request->id],
+                ['version', $request->version],
+                ['tenant_id',$request->header('Tenant-id')]
+            ])
+            ->whereNull('deleted_by');
              $cn = $t->get()->count();
              if( $cn > 0)
              {
-                $update_t = $t->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $update_t->delete_ts = $current_date_time; 
-                $update_t->deleted_by = $request->header('X-Consumer-Username');
 
-                //TerminalGroupLink::where('terminal_id', $request->id)->delete();
+              
+                $this->deleteAction($request,$t);
 
-                if ($update_t->save()) {
-                    DB::commit();
+                TerminalGroupLink::where('terminal_id', $request->id)->delete();
+                DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",
                         "responseDesc"=>"OK"
                         ];    
                     return $this->headerResponse($a,$request);
-                 }
+                
              }
              else
              {
@@ -386,6 +393,7 @@ class TerminalController extends Controller
         
         try {
             $t= Terminal::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('tenant_id', $request->header('Tenant-id'));
              $cn = $t->get()->count();
              if( $cn > 0)
@@ -440,6 +448,7 @@ class TerminalController extends Controller
         DB::beginTransaction();
         try {
             $t= Terminal::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version)
             ->where('tenant_id', $request->header('Tenant-id'));
              $cn = $t->get()->count();

@@ -12,8 +12,8 @@ class DeleteTaskTerminalGroupLinkController extends Controller
     public function list(Request $request){
 
         try {
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $delete_task_id = $request->delete_task_id;
                 $group_id = $request->group_id;
                

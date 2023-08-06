@@ -12,8 +12,8 @@ class DeleteTaskLogController extends Controller
     public function list(Request $request){
 
         try {
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $task_id = $request->task_id;
                 $version = $request->version; 
                 $app_id = $request->app_id; 

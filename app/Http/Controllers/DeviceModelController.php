@@ -21,24 +21,24 @@ class DeviceModelController extends Controller
                 $query = DeviceModel::whereNull('deleted_by');
 
                  
-                if($request->model != '')
+                if($request->modelName != '')
                 {
                     $query->where('model', 'ILIKE', '%' . $request->modelName .'%');
                 }
-                if($request->vendor_name != '')
+                if($request->vendorName != '')
                 {
                     $query->where('vendor_name', 'ILIKE', '%' . $request->vendorName . '%');
                 }
-                if($request->vendor_country != '')
+                if($request->vendorCountry != '')
                 {
-                    $query->where('vendor_country', 'ILIKE', '%' . $request->vendorCountry .'%');
+                    $query->where('vendorCountry', 'ILIKE', '%' . $request->vendorCountry .'%');
                 }
                
                 $count = $query->get()->count();
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
                 ->limit($pageSize)->orderBy('create_ts', 'DESC')
-                ->get(['id','model','vendor_name','vendor_country','version','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdatedBy','update_ts as lastUpdatedTime']);
+                ->get(['id','model','vendor_name as vendorName','vendor_country as vendorCountry','version','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdatedBy','update_ts as lastUpdatedTime']);
                 
                
 
@@ -57,7 +57,7 @@ class DeviceModelController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -74,7 +74,7 @@ class DeviceModelController extends Controller
     public function create(Request $request){
      
         $validator = Validator::make($request->all(), [
-            'model' => 'required|max:50|unique:tms_device_model',
+            'model' => 'required|max:50',
             'vendorName' => 'required|max:100|unique:tms_device_model,vendor_name',
             'vendorCountry' => 'required',
            
@@ -98,6 +98,7 @@ class DeviceModelController extends Controller
             $model->vendor_name = $request->vendorName;
             $model->vendor_country = $request->vendorCountry;
             $model->model_information = $request->modelInformation;
+            $this->saveAction($request, $model);
         
             if ($model->save()) {
                 DB::commit();
@@ -141,13 +142,24 @@ class DeviceModelController extends Controller
                 ['id',$request->id],
                 ['version',$request->version]
                
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
+            
+            if(empty($dm)){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+                return $this->headerResponse($a,$request);
+            }
 
             $dm->version = $request->version + 1;
             $dm->model = $request->model;
             $dm->vendor_name = $request->vendorName;
             $dm->vendor_country = $request->vendorCountry;
             $dm->model_information = $request->modelInformation;
+            
+            $this->updateAction($request,$dm);
           
             
             if ($dm->save()) {
@@ -179,8 +191,8 @@ class DeviceModelController extends Controller
             'version',
             'created_by as createdBy',
             'create_ts as createdTime',
-            'updated_by as lastUpdateBy',
-            'update_ts as lastUpdateTime'
+            'updated_by as lastUpdatedBy',
+            'update_ts as lastUpdatedTime'
             )
             ->where('id', $request->id)->whereNull('deleted_by');
             
@@ -199,7 +211,7 @@ class DeviceModelController extends Controller
            
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $DeviceModel
+                 "data" => null
                 ];    
             return $this->headerResponse($a,$request);
             }
@@ -221,15 +233,15 @@ class DeviceModelController extends Controller
         DB::beginTransaction();
         try {
             $m = DeviceModel::where('id','=',$request->id)
+            ->whereNull('deleted_by')
             ->where('version','=',$request->version);
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $m->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $updateMt->delete_ts = $current_date_time; 
-                $updateMt->deleted_by = "admin";//Auth::user()->id 
-                if ($updateMt->save()) {
+               
+            
+                $re = $this->deleteAction($request, $m);
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

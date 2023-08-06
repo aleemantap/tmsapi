@@ -10,7 +10,8 @@ use Illuminate\Routing\Controller as BaseController;
 class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
-
+   
+  
     public function successRes($request){
 
         return response()->json([
@@ -45,7 +46,7 @@ class Controller extends BaseController
          ->header('Response-Timestamp',date('Y-m-d H:i:s'));
     }
 
-    public function headerResponse($a,$request){ 
+    public function headerResponse($a,$request){
 
         return response()->json($a)
          ->header('Content-Type','app/json-application')
@@ -82,10 +83,25 @@ class Controller extends BaseController
     */
    public function deleteAction($request, $objDelete){
 
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $objDelete->delete_ts = $current_date_time; 
-                $objDelete->deleted_by = $request->header('X-Consumer-Username');
+        //$objDelete->timestamps = false;
+        $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
+       
+       return  $objDelete->update(array('delete_ts' => $current_date_time, 'deleted_by' => $request->header('X-Consumer-Username')));
 
    }
+
+   public function updateAction($request, $obj){
+   
+         $obj->updated_by =  $request->header('X-Consumer-Username');
+         $obj->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+   }
+
+   public function saveAction($request,$obj){
+   
+        $obj->created_by =  $request->header('X-Consumer-Username');
+        $obj->create_ts = \Carbon\Carbon::now()->toDateTimeString();
+        
+    }
+
     
 }

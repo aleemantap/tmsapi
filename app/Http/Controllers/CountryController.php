@@ -13,11 +13,11 @@ class CountryController extends Controller
 	
     public function list(Request $request){
 
-        //return $this->checkTenant($request);
+       
 
         try {   
-            $pageSize = $request->pageSize;
-            $pageNum = $request->pageNum;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
           
             
             $query = Country::select(
@@ -62,7 +62,7 @@ class CountryController extends Controller
                 }else{
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -80,11 +80,9 @@ class CountryController extends Controller
     public function create(Request $request){
 
  
-        
-
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:50',
-            'code' => 'required|max:2'
+            'code' => 'required|max:2|unique:tms_country'
         ]);
  
         if ($validator->fails()) {
@@ -104,7 +102,8 @@ class CountryController extends Controller
             $country->version = 1; 
             $country->code = $request->code;
             $country->name = $request->name;
-            
+            $this->saveAction($request, $country);
+
             if ($country->save()) {
                 DB::commit();
                 $a  =   [   
@@ -130,11 +129,27 @@ class CountryController extends Controller
 
     public function update(Request $request){
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50',
-            'code' => 'required|max:2',
-            'id' => 'required'
-        ]);
+        $check = Country::where([
+            ['id',$request->id],
+            ['name',$request->name],
+        ])->first();
+
+        
+        $appa = [
+            'name' => 'required',
+            'code' => 'required',
+            'id' => 'required',
+            'version' => 'required'
+          
+        ];
+        
+        if(!empty($check)){
+     
+            $appa['name'] = 'required|max:50';
+            $appa['code'] = 'required|max:50|unique:tms_country';
+           
+        }
+        $validator = Validator::make($request->all(),$appa);
  
         if ($validator->fails()) {
             $a  =   [   
@@ -149,13 +164,24 @@ class CountryController extends Controller
            
             $country = Country::where([
                 ['id',$request->id],
-                //['code',$request->code],
                 ['version', $request->version]
-            ])->first();
+                
+            ])
+            ->whereNull('deleted_by')
+            ->first();
+
+            if(empty($country)){
+                $a=["responseCode"=>"0400",
+                        "responseDesc"=>"Data Not Found",
+                        'rows' => null
+                        ];    
+                        return $this->headerResponse($a,$request);
+            }
 
             $country->version = $request->version + 1;
             $country->code = $request->code;
             $country->name = $request->name;
+            $this->updateAction($request, $country);
             if ($country->save()) {
                 DB::commit();
                 $a  =   [   
@@ -180,8 +206,10 @@ class CountryController extends Controller
 
         try {
             //$country = Country::where('id',$request->id)->get();
-            $country = Country::select('id', 'code', 'name', 'version','created_by as createdBy', 'create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')->
-            where('id',$request->id)->get();
+            $country = Country::select('id', 'code', 'name', 'version','created_by as createdBy', 'create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+            ->where('id',$request->id)
+            ->whereNull('deleted_by')
+            ->get();
 
             if($country->count()>0)
             {
@@ -197,7 +225,7 @@ class CountryController extends Controller
               
                 $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                     "data" => $country
+                     "data" => null
                     ];    
                 return $this->headerResponse($a,$request);
             }
@@ -217,23 +245,35 @@ class CountryController extends Controller
     public function delete(Request $request){
         DB::beginTransaction();
         try {
-            $country = Country::where([
+           
+            $country =  DB::table('tms_country')
+            ->whereNull('deleted_by')
+            ->where([
                 ['id',$request->id],
                 ['version', $request->version]
-            ])->first();
-            $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-            $country->delete_ts = $current_date_time; 
-            $country->deleted_by = "admin";//Auth::user()->id
+            ]);
             
-            if ($country->save()) {
-                DB::commit();
+            if($country->get()->count()>0){
 
-                 $a  =   [   
-                "responseCode"=>"0000",
-                "responseDesc"=>"OK"
-                ];    
-            return $this->headerResponse($a,$request);
+                $re = $this->deleteAction($request,$country);
+                if ($re) {
+                    DB::commit();
+
+                    $a  =   [   
+                    "responseCode"=>"0000",
+                    "responseDesc"=>"OK"
+                    ];    
+                return $this->headerResponse($a,$request);
+                }
+            }else
+            {
+            $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found"
+                   
+                    ];    
+                return $this->headerResponse($a,$request);
             }
+        
         } catch (\Exception $e) {
             DB::rollBack();
             $a  =   [   

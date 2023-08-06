@@ -102,7 +102,7 @@ class DownloadTaskController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -122,7 +122,7 @@ class DownloadTaskController extends Controller
 
                 $query = DownloadTask::select(
                     'tms_download_task.id',
-                    'tms_terminal.id',
+                    'tms_terminal.model_id as id',
                     'tms_terminal.sn',
                 )
                 ->where('tms_download_task.id',$request->id)->whereNull('tms_download_task.deleted_by')
@@ -152,7 +152,7 @@ class DownloadTaskController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -172,12 +172,14 @@ class DownloadTaskController extends Controller
 
                 $query = DownloadTask::select(
                     'tms_download_task.id',
-                    'tms_terminal_group.id',
-                    'tms_terminal_group.name'
+                    'tms_terminal.model_id as id',
+                    'tms_download_task.name'
                 )
                 ->where('tms_download_task.id',$request->id)->whereNull('tms_download_task.deleted_by')
                 ->join('tms_download_task_terminal_group_link', 'tms_download_task.id', '=', 'tms_download_task_terminal_group_link.download_task_id')
                 ->join('tms_terminal_group', 'tms_terminal_group.id', '=', 'tms_download_task_terminal_group_link.group_id')
+                ->join('tms_terminal_group_link', 'tms_terminal_group_link.terminal_group_id', '=', 'tms_terminal_group.id')
+                ->join('tms_terminal', 'tms_terminal.id', '=', 'tms_terminal_group_link.terminal_id')
                 ;
 
             
@@ -202,7 +204,7 @@ class DownloadTaskController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -219,7 +221,7 @@ class DownloadTaskController extends Controller
     public function create(Request $request){
      
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50|unique:tms_download_task',
+            'name' => 'required|max:50',
             'publishTimeType' => 'in:1,2',
             'publishTime' => ['required_if:publishTimeType,2','date_format:Y-m-d H:i:s'],
             'downloadTimeType' => 'required|in:1,2',
@@ -255,7 +257,7 @@ class DownloadTaskController extends Controller
             $dt->download_time_type = $request->downloadTimeType;
             $dt->tenant_id = $request->header('Tenant-id');
             //$dt->download_url = $request->download_url;
-            
+            $this->saveActioin($request,$dt);
             $dt->save();
           
             
@@ -345,7 +347,7 @@ class DownloadTaskController extends Controller
         
         if(!$check){
          
-            $DownloadTask['name'] = 'required|max:100|unique:tms_download_task';
+            $DownloadTask['name'] = 'required|max:100';
         }
 
         $validator = Validator::make($request->all(), $DownloadTask);
@@ -374,10 +376,17 @@ class DownloadTaskController extends Controller
                 ['tenant_id',$request->header('Tenant-id')],
                 ['status','!=',1],
                
-            ])
-            ->whereNull('deleted_by')
-            ;
+            ]);
+            
             $cnt = $dtc->get()->count();
+            
+            if($dtc->whereNull('deleted_by')->get()->count()==0){
+                $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found"
+                    ];    
+                return $this->headerResponse($a,$request);
+                }
+            
 
             if($cnt>0){
                 $dt->version = $request->version + 1;
@@ -388,7 +397,7 @@ class DownloadTaskController extends Controller
                 $dt->installation_time_type = $request->installationTimeType;
                 $dt->installation_time = $request->installationTime;
                 $dt->installation_notification = $request->installationNotification;
-                
+                $this->updateActioin($request, $dt);
                 $dt->save();
                 
 
@@ -462,6 +471,18 @@ class DownloadTaskController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function show(Request $request){
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|max:36'
+        ]);
+ 
+        if ($validator->fails()) {
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+        
         try {
             $t = DownloadTask::
             
@@ -507,7 +528,7 @@ class DownloadTaskController extends Controller
            
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $t
+                 "data" => null
                 ];    
                 return $this->headerResponse($a,$request);              
                
@@ -536,19 +557,21 @@ class DownloadTaskController extends Controller
             $t= DownloadTask::where('id','=',$request->id)
             ->where('version','=',$request->version)
             ->where('tenant_id',$request->header('Tenant-id'))
-            ->where('status','=',2)
-            ->whereNull('deleted_by');
+            ->where('status','=',2);
              $cn = $t->get()->count();
+
+             if($t->whereNull('deleted_by')->get()->count()==0){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+                return $this->headerResponse($a,$request);  
+             }
+
              if( $cn > 0)
              {
-                $update_t = $t->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $update_t->delete_ts = $current_date_time; 
-                $update_t->version = $request->version + 1; 
+                
+                $this->deleteAction($request,$t);
 
-                $update_t->deleted_by = $request->header('X-Consumer-Username');
-
-                $update_t->save();
                 DownloadTaskApplicationLink::where('download_task_id', $request->id)->delete();
                 DownloadTaskTerminalGroupLink::where('download_task_id', $request->id)->delete();
                 DownloadTaskTerminalLink::where('download_task_id', $request->id)->delete();
@@ -592,15 +615,23 @@ class DownloadTaskController extends Controller
             $t= DownloadTask::where('id','=',$request->id)
             ->where('version','=',$request->version)
             ->where('tenant_id',$request->header('Tenant-id'))
-            ->whereIn('status',[1,2])
-            ->whereNull('deleted_by');
+            ->whereIn('status',[1,2]);
+            
              $cn = $t->get()->count();
+
+             if($t->whereNull('deleted_by')->get()->count()==0){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+                return $this->headerResponse($a,$request);  
+             }
              if( $cn > 0)
              {
                 $update_t = $t->first();
                 $update_t->version = $request->version + 1; 
                 $update_t->status = 3; 
-                
+                //$update_t->update_ts = \Carbon\Carbon::now()->toDateTimeString();
+                $this->updateAction($update_t);
                 $update_t->save();
                 DownloadTaskApplicationLink::where('download_task_id', $request->id)->delete();
                 DownloadTaskTerminalGroupLink::where('download_task_id', $request->id)->delete();
@@ -641,7 +672,7 @@ class DownloadTaskController extends Controller
 
                 $query = DownloadTask::select(
                     'tms_terminal.model_id as id',
-                    'tms_download_task.status',
+                    'tms_download_task.status as activity',
                     'tms_terminal.sn',
                     'tms_download_task.update_ts as lastUpdateTime'
                 )
@@ -675,7 +706,7 @@ class DownloadTaskController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -701,7 +732,7 @@ class DownloadTaskController extends Controller
 
                 $query = DownloadTask::select(
                     'tms_terminal.model_id as id',
-                    'tms_download_task.status',
+                    'tms_download_task.status as activity',
                     'tms_terminal.sn',
                     'tms_download_task.update_ts as lastUpdateTime'
                 )
@@ -735,7 +766,7 @@ class DownloadTaskController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }

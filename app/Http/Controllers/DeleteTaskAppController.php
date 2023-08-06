@@ -12,8 +12,8 @@ class DeleteTaskAppController extends Controller
     public function list(Request $request){
 
         try {
-                $pageSize = $request->pageSize;
-                $pageNum = $request->pageNum;
+            $pageSize = ($request->pageSize)?$request->pageSize:10;
+            $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $app_name = $request->app_name;
                 $package_name = $request->package_name;
                 $app_version = $request->app_version;

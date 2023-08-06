@@ -44,7 +44,7 @@ class MerchantTypeController extends Controller
                 {
                     $a=["responseCode"=>"0400",
                     "responseDesc"=>"Data Not Found",
-                    'rows' => $results
+                    'rows' => null
                     ];    
                 return $this->headerResponse($a,$request);
                 }
@@ -62,7 +62,7 @@ class MerchantTypeController extends Controller
 
         
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:50|unique:tms_merchant_type'
+            'name' => 'required|max:50'
             //'description' => 'required' 
         ]);
  
@@ -82,7 +82,7 @@ class MerchantTypeController extends Controller
             $merchantType->name = $request->name;
             //$merchantType->created_by = $request->header('Tenant-id');
             $merchantType->description = $request->description;
-
+            $this->saveAction($request, $merchantType);
             if ($merchantType->save()) {
                 DB::commit();
                 $a  =   [   
@@ -107,7 +107,7 @@ class MerchantTypeController extends Controller
 
         $validator = Validator::make($request->all(), [
             'version' => 'required|numeric|max:32',
-            'name' => 'required|max:50|unique:tms_merchant_type',
+            'name' => 'required|max:50',
             //'description' => 'required',
             'id' => 'required' 
         ]);
@@ -126,11 +126,21 @@ class MerchantTypeController extends Controller
                 ['id',$request->id],
                 ['version',$request->version]
                 
-            ])->first();
+            ])
+            ->whereNull('deleted_by')
+            ->first();
+
+            if(empty($mt)){
+                $a=["responseCode"=>"0400",
+                "responseDesc"=>"Data Not Found"
+                ];    
+            return $this->headerResponse($a,$request);
+            }
 
             $mt->version = $request->version + 1;
             $mt->name = $request->name;
             $mt->description = $request->description;
+            $this->updateAction($request,$mt);
             
             if ($mt->save()) {
                 DB::commit();
@@ -153,6 +163,7 @@ class MerchantTypeController extends Controller
     public function show(Request $request){
         try {
             $mt = MerchantType::select('id','name','description','version','created_by as createdBy', 'create_ts as createdTime','updated_by as lastUpdateBy','update_ts as lastUpdateTime')
+            ->whereNull('deleted_by')
             ->where('id', $request->id)->get();
             if($mt->count()>0)
             {
@@ -166,7 +177,7 @@ class MerchantTypeController extends Controller
             {
                 $a=["responseCode"=>"0400",
                 "responseDesc"=>"Data Not Found",
-                 "data" => $mt
+                 "data" => null
                 ];    
                 return $this->headerResponse($a,$request);
             }
@@ -199,15 +210,14 @@ class MerchantTypeController extends Controller
 
         DB::beginTransaction();
         try {
-            $mt = MerchantType::where([['id','=',$request->id],['version','=',$request->version]]);
+            $mt = MerchantType::where([['id','=',$request->id],['version','=',$request->version]])
+            ->whereNull('deleted_by');
              $cn = $mt->get()->count();
              if( $cn > 0)
              {
-                $updateMt = $mt->first();
-                $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                $updateMt->delete_ts = $current_date_time; 
-                $updateMt->deleted_by = "admin";//Auth::user()->id 
-                if ($updateMt->save()) {
+              
+                $re = $this->deleteAction($request, $mt);
+                if ($re) {
                     DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",
