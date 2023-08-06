@@ -136,7 +136,7 @@ class MerchantController extends Controller
             $merchant->district_id = $request->districtId;
             $merchant->zipcode = $request->zipcode;
             $merchant->type_id = $request->merchantTypeId;
-            $this->saveAction($merchant);
+            $this->saveAction($request, $merchant);
 
             if ($merchant->save()) {
                 DB::commit();
@@ -196,7 +196,7 @@ class MerchantController extends Controller
             $merchant->district_id = $request->districtId;
             $merchant->zipcode = $request->zipcode;
             $merchant->type_id = $request->merchantTypeId;
-            $this->updateAction($merchant);
+            $this->updateAction($request,$merchant);
             
             if ($merchant->save()) {
                 DB::commit();
@@ -267,16 +267,8 @@ class MerchantController extends Controller
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                
-                $ob =  DB::table('tms_merchant')
-                    ->where([
-                        ['id',$request->id],
-                        ['version', $request->version],
-                        ['tenant_id', $request->header('Tenant-id')]
-
-                    ]);
             
-                $re = $this->deleteAction($request,$ob);
+                $re = $this->deleteAction($request,$m);
                
                 if ($re) {
                     DB::commit();

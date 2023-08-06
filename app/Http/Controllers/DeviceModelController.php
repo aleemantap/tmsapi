@@ -98,7 +98,7 @@ class DeviceModelController extends Controller
             $model->vendor_name = $request->vendorName;
             $model->vendor_country = $request->vendorCountry;
             $model->model_information = $request->modelInformation;
-            $this->saveAction($model);
+            $this->saveAction($request, $model);
         
             if ($model->save()) {
                 DB::commit();
@@ -150,7 +150,7 @@ class DeviceModelController extends Controller
             $dm->vendor_country = $request->vendorCountry;
             $dm->model_information = $request->modelInformation;
             
-            $this->updateAction($dm);
+            $this->updateAction($request,$dm);
           
             
             if ($dm->save()) {
@@ -228,13 +228,13 @@ class DeviceModelController extends Controller
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $dm =  DB::table('tms_device_model')
-                    ->where([
-                        ['id',$request->id],
-                        ['version', $request->version]
-                    ]);
+                // $dm =  DB::table('tms_device_model')
+                //     ->where([
+                //         ['id',$request->id],
+                //         ['version', $request->version]
+                //     ]);
             
-                $re = $this->deleteAction($request,$dm);
+                $re = $this->deleteAction($request,$m);
                 if ($re) {
                     DB::commit();
                     $a  =   [   

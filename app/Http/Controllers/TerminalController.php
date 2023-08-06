@@ -137,7 +137,7 @@ class TerminalController extends Controller
             $t->tenant_id = $request->header('Tenant-id');
             $t->sn = $request->sn;
             $t->profile_id = $request->profileId;
-            $t->saveAction($t); 
+            $t->saveAction($request, $t); 
             
             //$t->is_locked = $request->is_locked;
             //$t->locked_reason = $request->locked_reason;
@@ -224,7 +224,7 @@ class TerminalController extends Controller
             $t->merchant_id = $request->merchantId;
             $t->sn = $request->sn;
             $t->profile_id = $request->profileId;
-            $this->updateAction($t);
+            $this->updateAction($request, $t);
             
            
             $t->save();
@@ -340,10 +340,7 @@ class TerminalController extends Controller
              $cn = $t->get()->count();
              if( $cn > 0)
              {
-                //$update_t = $t->first();
-                //$this->deleteAction($request, $update_t);
-                //TerminalGroupLink::where('terminal_id', $request->id)->delete();
-               
+              
                 $re = $this->deleteAction($request,$t);
 
                 if ($re) {

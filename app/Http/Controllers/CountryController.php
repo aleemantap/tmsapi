@@ -102,7 +102,7 @@ class CountryController extends Controller
             $country->version = 1; 
             $country->code = $request->code;
             $country->name = $request->name;
-            $this->saveAction($country);
+            $this->saveAction($request, $country);
 
             if ($country->save()) {
                 DB::commit();
@@ -171,7 +171,7 @@ class CountryController extends Controller
             $country->version = $request->version + 1;
             $country->code = $request->code;
             $country->name = $request->name;
-            $this->updateAction($country);
+            $this->updateAction($request, $country);
             if ($country->save()) {
                 DB::commit();
                 $a  =   [   

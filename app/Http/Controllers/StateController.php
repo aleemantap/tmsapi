@@ -215,20 +215,35 @@ class StateController extends Controller
 
         DB::beginTransaction();
         try {
+        
             $state =  DB::table('tms_states')
             ->where([
                 ['id',$request->id],
                 ['version', $request->version]
             ]);
-           $st = $this->deleteAction($request, $state);
-            if ($st) {
-                DB::commit();
+             $cn = $state->get()->count();
+             if( $cn > 0)
+             {
+              
+                $re = $this->deleteAction($request,$state);
+
+                if ($re) {
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
+                 }
+             }
+             else
+             {
                 $a  =   [   
-                    "responseCode"=>"0000",
-                    "responseDesc"=>"OK"
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
                     ];    
                 return $this->headerResponse($a,$request);
-            }
+              }
 
             
         } catch (\Exception $e) {

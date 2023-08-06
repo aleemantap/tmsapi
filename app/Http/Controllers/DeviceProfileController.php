@@ -112,7 +112,7 @@ class DeviceProfileController extends Controller
             }
             $dp->admin_password = $request->adminPassword;
             $dp->front_app = $request->frontApp;
-            $this->saveAction($dp);
+            $this->saveAction($request,$dp);
             $dp->tenant_id = $request->header('Tenant-id');
         
             if ($dp->save()) {
@@ -209,7 +209,7 @@ class DeviceProfileController extends Controller
             }
             $dp->admin_password = $request->adminPassword;
             $dp->front_app = $request->frontApp;
-            $this->updateAction($dp);
+            $this->updateAction($request, $dp);
             $dp->tenant_id = $request->header('Tenant-id');
         
             
@@ -304,16 +304,7 @@ class DeviceProfileController extends Controller
              $cn = $m->get()->count();
              if( $cn > 0)
              {
-                
-                $dp =  DB::table('tms_device_profile')
-                ->where([
-                    ['id',$request->id],
-                    ['version', $request->version],
-                    ['tenant_id', $request->header('Tenant-id')],
-
-                ]);
-                
-                $re = $this->deleteAction($request,$dp);
+                $re = $this->deleteAction($request,$m);
                 if ($re) {
                     DB::commit();
                     $a  =   [   

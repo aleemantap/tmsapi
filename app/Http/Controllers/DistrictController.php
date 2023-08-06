@@ -88,7 +88,7 @@ class DistrictController extends Controller
             $district->version = 1; 
             $district->name = $request->name;
             $district->city_id = $request->city_id;
-            $this->saveAction($district);
+            $this->saveAction($request, $district);
 
             if ($district->save()) {
                 DB::commit();
@@ -138,7 +138,7 @@ class DistrictController extends Controller
 
             $district->version = $request->version + 1;
             $district->name = $request->name;
-            $this->updateAction($district);
+            $this->saveAction($request, $district);
             
             
             if ($district->save()) {
@@ -196,19 +196,15 @@ class DistrictController extends Controller
     public function delete(Request $request){
         DB::beginTransaction();
         try {
-            $district = District::where([['id',$request->id],['version',$request->version]])->first();
-
            
-             if($district->count() > 0)
+            $m = District::where('id','=',$request->id)
+            ->where('version','=',$request->version);
+            
+             if($m->get()->count() > 0)
              {
-                 
-                $ds =  DB::table('tms_district')
-                ->where([
-                    ['id',$request->id],
-                    ['version', $request->version]
-                ]);
+             
                 
-                $re = $this->deleteAction($request,$ds);
+                $re = $this->deleteAction($request,$m);
                 if ($re) {
                     DB::commit();
                     $a  =   [   

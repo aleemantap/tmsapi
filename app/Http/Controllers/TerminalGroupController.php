@@ -109,7 +109,7 @@ class TerminalGroupController extends Controller
             $tg->name = $request->name;
             $tg->description = $request->description;
             $tg->tenant_id = $request->header('Tenant-id');
-            $this->saveAction($tg);
+            $this->saveAction($request,$tg);
             
             $tg->save();
 
@@ -192,7 +192,7 @@ class TerminalGroupController extends Controller
             $tg->version = $request->version + 1;
             $tg->name = $request->name;
             $tg->description = $request->description;
-            $this->updateAction($tg);
+            $this->updateAction($request, $tg);
                              
         
             $tg->save();
@@ -280,17 +280,17 @@ class TerminalGroupController extends Controller
             ->where('tenant_id',$request->header('Tenant-id'));
              $cn = $tg->get()->count();
 
-             $update_tg = $tg->first();
+             //$update_tg = $tg->first();
 
              if( $cn > 0)
              {
                 
-                $tg =  DB::table('tms_terminal_group')
-                ->where([
-                    ['id',$request->id],
-                    ['version', $request->version],
-                    ['tenant_id',$request->header('Tenant-id')]
-                ]);
+                // $tg =  DB::table('tms_terminal_group')
+                // ->where([
+                //     ['id',$request->id],
+                //     ['version', $request->version],
+                //     ['tenant_id',$request->header('Tenant-id')]
+                // ]);
             
                 $r = $this->deleteAction($request, $tg);
 

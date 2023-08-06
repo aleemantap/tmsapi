@@ -257,7 +257,7 @@ class DownloadTaskController extends Controller
             $dt->download_time_type = $request->downloadTimeType;
             $dt->tenant_id = $request->header('Tenant-id');
             //$dt->download_url = $request->download_url;
-            $this->saveActioin($dt);
+            $this->saveActioin($request,$dt);
             $dt->save();
           
             
@@ -390,7 +390,7 @@ class DownloadTaskController extends Controller
                 $dt->installation_time_type = $request->installationTimeType;
                 $dt->installation_time = $request->installationTime;
                 $dt->installation_notification = $request->installationNotification;
-                $this->updateActioin($dt);
+                $this->updateActioin($request, $dt);
                 $dt->save();
                 
 
@@ -543,23 +543,8 @@ class DownloadTaskController extends Controller
              $cn = $t->get()->count();
              if( $cn > 0)
              {
-                // $update_t = $t->first();
-                // $current_date_time = \Carbon\Carbon::now()->toDateTimeString();
-                // $update_t->delete_ts = $current_date_time; 
-                // $update_t->version = $request->version + 1; 
-
-                // $update_t->deleted_by = $request->header('X-Consumer-Username');
-
-                // $update_t->save();
-                $dt =  DB::table('tms_download_task')
-                ->where([
-                    ['id',$request->id],
-                    ['version', $request->version],
-                    ['tenant_id',$request->header('Tenant-id')],
-                    ['status',2]
-                ]);
                 
-                $this->deleteAction($request,$dt);
+                $this->deleteAction($request,$t);
 
                 DownloadTaskApplicationLink::where('download_task_id', $request->id)->delete();
                 DownloadTaskTerminalGroupLink::where('download_task_id', $request->id)->delete();

@@ -90,13 +90,13 @@ class Controller extends BaseController
 
    }
 
-   public function updateAction($obj){
+   public function updateAction($request, $obj){
    
          $obj->updated_by =  $request->header('X-Consumer-Username');
          $obj->update_ts = \Carbon\Carbon::now()->toDateTimeString();
    }
 
-   public function saveAction($obj){
+   public function saveAction($request,$obj){
    
         $obj->created_by =  $request->header('X-Consumer-Username');
         $obj->create_ts = \Carbon\Carbon::now()->toDateTimeString();
