@@ -40,7 +40,7 @@ class Application extends Model
 	
 	public function deviceModel()
     {
-        return $this->belongsTo('App\Models\DeviceModel','deviceModelId','id');
+        return $this->belongsTo('App\Models\DeviceModel','device_model_id','id');
 		 //return $this->belongsTo(DeviceModel::class, 'tms_application');
     }
 
