@@ -28,7 +28,7 @@ class Merchant extends Model
    	public function merchanttype()
     {
        
-         return $this->belongsTo('App\Models\merchanttype','type_id','id');
+         return $this->belongsTo('App\Models\MerchantType','type_id','id');
     }
 
     public function district()

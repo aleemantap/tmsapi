@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\Application;
+use App\Models\DeviceModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -18,21 +19,29 @@ class ApplicationController extends Controller
             $pageNum = ($request->pageNum)?$request->pageNum:1;
 
                 $query = Application::whereNull('deleted_by')
-                ->select(
+				->select(
                     'id',
                     'package_name as packageName',
                     'name',
                     'description',
-                    'app_version as app_version',
+                    'app_version as appVersion',
                     'uninstallable',
                     'company_name as companyName',
                     'icon_url as iconUrl',
-                    'version',
+					'version',
                     'created_by as createdBy',
                     'create_ts as createdTime',
                     'updated_by as lastUpdatedBy',
                     'update_ts as lastUpdatedTime'
-                );
+                )
+				->addSelect(['deviceModelName' => DeviceModel::select('model')->whereColumn('id', 'tms_application.deviceModelId')]);
+				
+				
+				if($request->deviceModelId != '')
+                {
+                    $query->where('deviceModelId',$request->deviceModelId);
+                }
+				
                 if($request->name != '')
                 {
                     $query->where('name', 'ILIKE','%'.$request->name.'%');
@@ -40,7 +49,8 @@ class ApplicationController extends Controller
                 $count = $query->get()->count();
                 $results = $query->offset(($pageNum-1) * $pageSize) 
                 ->limit($pageSize)->orderBy('create_ts', 'DESC')
-                ->get();
+				
+			    ->get()->makeHidden(['deviceModelId']);
                 
                 if($count > 0)
                 {
@@ -50,7 +60,8 @@ class ApplicationController extends Controller
                                     'pageSize'  =>  $pageSize,
                                     'totalPage' => ceil($count/$pageSize),
                                     'total' => $count,
-                                    'rows' => $results
+                                    'rows' =>$results
+ 									
                                     ];    
                     return $this->listResponse($a,$request);
                 }
@@ -85,6 +96,7 @@ class ApplicationController extends Controller
             'description' => 'max:255',
             'uninstallable'=>  'boolean',  
             'companyName'=>  'required|max:100', 
+			'deviceModelId' => 'required', 
           
         ]);
  
@@ -127,6 +139,7 @@ class ApplicationController extends Controller
             $app->unique_icon_name = substr($path,6);
             $app->icon_url = $path;
             $app->tenant_id = $request->header('tenant-id');
+            $app->deviceModelId = $request->deviceModelId;
             $this->saveAction($request,$app);
         
             if ($app->save()) {
@@ -152,7 +165,7 @@ class ApplicationController extends Controller
 
     public function update(Request $request){
 
-        $check = Application::where([
+        /*$check = Application::where([
             ['id',$request->id],
             ['name',$request->name],
             ['package_name',$request->packageName ]
@@ -175,7 +188,20 @@ class ApplicationController extends Controller
             $appa['name'] = 'required|max:100';
             $appa['packageName'] = 'required|max:255';
         }
-        $validator = Validator::make($request->all(),$appa);
+		 $validator = Validator::make($request->all(),$appa);
+		*/
+		 $validator = Validator::make($request->all(), [
+            'name' => 'required|max:100',
+            'packageName' =>  'required|max:255',
+            'appVersion' => 'required|max:50',
+            'description' => 'max:255',
+            'uninstallable'=>  'boolean',  
+            'companyName'=>  'required|max:100', 
+			'deviceModelId' => 'required', 
+          
+        ]);
+		
+       
  
         if ($validator->fails()) {
             $a  = [   
@@ -226,7 +252,8 @@ class ApplicationController extends Controller
                     //$app->apk = $request->apk;
                     $app->icon_url = $path;
                     $app->tenant_id = $request->header('tenant-id');
-                    $this->updateAction($request, $app);
+                    $app->deviceModelId = $request->deviceModelId;
+                    $this->updateAction($request, $app); 
                 
                     if ($app->save()) {
                         DB::commit();
@@ -262,10 +289,28 @@ class ApplicationController extends Controller
     
     
     public function show(Request $request){
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|max:36'
+        ]);
+ 
+        if ($validator->fails()) {
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+        
         try {
-            $app = Application::where('id', $request->id)
+            $app = Application::
+			where('id', $request->id)
             ->where('tenant_id',$request->header('Tenant-id'))
-            ->whereNull('deleted_by');
+			->whereNull('deleted_by')
+			->with(['deviceModel' => function ($query) {
+                    $query->select('id', 'model');
+					//$query->orderBy('id');
+            }]);
+			
             
             if($app->get()->count()>0)
             {
@@ -278,8 +323,9 @@ class ApplicationController extends Controller
                     "description" => $app[0]['description'],
                     "appVersion" => $app[0]['app_version'],
                     "uninstallable" => $app[0]['uninstallable'],
-                    "company_name" => $app[0]['company_name'],
+                    "companyName" => $app[0]['company_name'],
                     "iconUrl"  => $app[0]['icon_url'],
+					"deviceModel" => $app[0]['deviceModel'],
                     "version" => $app[0]['version'],
                     "createdBy"=> $app[0]['created_by'],
                     "createdTime" => $app[0]['create_ts'],

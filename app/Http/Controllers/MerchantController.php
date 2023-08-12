@@ -225,7 +225,24 @@ class MerchantController extends Controller
         }
     }
     
+    /**
+     * Summary of show
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(Request $request){
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|max:36'
+        ]);
+ 
+        if ($validator->fails()) {
+            $a  =   [   
+                "responseCode"=>"5555",
+                "responseDesc"=>$validator->errors()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+
         try {
             $merchant = Merchant::where('id', $request->id)
             ->whereNull('deleted_by')
@@ -240,7 +257,7 @@ class MerchantController extends Controller
                         $query->select('id', 'name');
                     }])->get();
 
-                    $jsonM =[
+                    $jsonM =array(
                         "id" => $merchant[0]['id'],
                         "name" => $merchant[0]['name'],
                         "companyName" =>  $merchant[0]['companyName'],
@@ -253,7 +270,7 @@ class MerchantController extends Controller
                         "lastUpdatedTime" =>  $merchant[0]['lastUpdateTime'],
                         'district' => $merchant[0]['district'],
                         "merchantType" =>  $merchant[0]['merchanttype']
-                    ];
+                    );
               
                     
                     $a=    [
