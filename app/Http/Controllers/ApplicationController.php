@@ -34,12 +34,12 @@ class ApplicationController extends Controller
                     'updated_by as lastUpdatedBy',
                     'update_ts as lastUpdatedTime'
                 )
-				->addSelect(['deviceModelName' => DeviceModel::select('model')->whereColumn('id', 'tms_application.deviceModelId')]);
+				->addSelect(['deviceModelName' => DeviceModel::select('model')->whereColumn('id', 'tms_application.device_model_id')]);
 				
 				
 				if($request->deviceModelId != '')
                 {
-                    $query->where('deviceModelId',$request->deviceModelId);
+                    $query->where('device_model_id',$request->deviceModelId);
                 }
 				
                 if($request->name != '')
@@ -139,7 +139,7 @@ class ApplicationController extends Controller
             $app->unique_icon_name = substr($path,6);
             $app->icon_url = $path;
             $app->tenant_id = $request->header('tenant-id');
-            $app->deviceModelId = $request->deviceModelId;
+            $app->device_model_id = $request->deviceModelId;
             $this->saveAction($request,$app);
         
             if ($app->save()) {
@@ -197,7 +197,7 @@ class ApplicationController extends Controller
             'description' => 'max:255',
             'uninstallable'=>  'boolean',  
             'companyName'=>  'required|max:100', 
-			'deviceModelId' => 'required', 
+			'device_model_id' => 'required', 
           
         ]);
 		
