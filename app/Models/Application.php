@@ -7,6 +7,7 @@ use App\Traits\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Blameable;
 use App\Models\DownloadTaskApplicationLink;
+use App\Models\DeviceModel;
 //use App\Models\DownloadTask;
 
 class Application extends Model 
@@ -19,6 +20,8 @@ class Application extends Model
     //const UPDATED_AT = 'update_ts';
     public $timestamps = false;
     protected $hidden = array('pivot');
+	
+	
     
     public function downloadTask()
     {
@@ -34,5 +37,12 @@ class Application extends Model
     {
        return $this->hasMany(DownloadTaskApplicationLink::class);
     }
+	
+	public function deviceModel()
+    {
+        return $this->belongsTo('App\Models\DeviceModel','deviceModelId','id');
+		 //return $this->belongsTo(DeviceModel::class, 'tms_application');
+    }
+
 
 }

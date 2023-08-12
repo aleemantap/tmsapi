@@ -22,7 +22,16 @@ class DeviceModel extends Model
      *
      * @var string
      */
+	 
+   //protected $fillable = [
+     //   'version', 'create_ts', 'created_by', 'update_ts', 'updated_by', 'delete_ts', 'deleted_by', 'id', 'model','deviceModelId'
+    //];	
    
+   public function application()
+   {
+       
+        return $this->hasMany('App\Models\Application');
+   }
 
 
 }
