@@ -20,6 +20,7 @@ class ApplicationController extends Controller
             $pageNum = ($request->pageNum)?$request->pageNum:1;
 
                 $query = Application::whereNull('deleted_by')
+                ->where('tenant_id','=', $request->header('Tenant-id'))
 				->select(
                     'id',
                     'package_name as packageName',
