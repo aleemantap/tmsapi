@@ -110,7 +110,8 @@ Route::middleware('HeaderAccess')->group(function($router){
     
     
         /* router terminal group*/ 
-        $router->get('/terminalGroup/listTerminal', [TerminalGroupController::class,'list']);
+        $router->get('/terminalGroup/listTerminal', [TerminalGroupController::class,'listTerminal']);
+        $router->get('/terminalGroup/list', [TerminalGroupController::class,'list']);
         $router->get('/terminalGroup/get', [TerminalGroupController::class,'show']);
         $router->post('/terminalGroup/add', [TerminalGroupController::class,'create']);
         $router->post('/terminalGroup/update', [TerminalGroupController::class,'update']);

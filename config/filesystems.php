@@ -14,7 +14,7 @@ return [
     */
 
     'default' => env('FILESYSTEM_DRIVER', 'local'),
-    'cloud' => env('FILESYSTEM_CLOUD', 's3'),
+    'cloud' => env('FILESYSTEM_CLOUD', 'minio'),
 
     /*
     |--------------------------------------------------------------------------
@@ -61,6 +61,9 @@ return [
             'bucket' => env('MINIO_BUCKET'),
             'url' => env('MINIO_URL'),
             'endpoint' => env('MINIO_ENDPOINT'),
+            'options' => [
+                "mimeType" => "application/vnd.android.package-archive",
+            ]
             
         ],
 

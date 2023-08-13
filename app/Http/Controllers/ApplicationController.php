@@ -8,17 +8,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class ApplicationController extends Controller
 {
     public function list(Request $request){
 
         try {
-           
+                //$path = $m->select("icon_url")->get(); 
+                //$path = $path[0]['icon_url'];
+                
+                //$url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(30));
+    
 
             $pageSize = ($request->pageSize)?$request->pageSize:10;
             $pageNum = ($request->pageNum)?$request->pageNum:1;
-
+            $keyword = 'tes';
                 $query = Application::whereNull('deleted_by')
                 ->where('tenant_id','=', $request->header('Tenant-id'))
 				->select(
@@ -36,7 +41,7 @@ class ApplicationController extends Controller
                     'updated_by as lastUpdatedBy',
                     'update_ts as lastUpdatedTime'
                 )
-				->addSelect(['deviceModelName' => DeviceModel::select('model')->whereColumn('id', 'tms_application.device_model_id')]);
+                ->addSelect(['deviceModelName' => DeviceModel::select('model')->whereColumn('id', 'tms_application.device_model_id')]);
 				
 				
 				if($request->deviceModelId != '')
@@ -57,12 +62,35 @@ class ApplicationController extends Controller
                 if($count > 0)
                 {
                   
+                    $result2 = collect($results)->map(function ($data) {
+
+                        $url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(30));
+    
+                        $d = [];
+                        $d['id']              = $data['id']; 
+                        $d['packageName'] = $data['packageName']; 
+                        $d['name'] = $data['name']; 
+                        $d['description'] = $data['description']; 
+                        $d['appVersion'] = $data['appVersion'];
+                        $d['uninstallable'] = $data['uninstallable'];
+                        $d['companyName'] =  $data['companyName'];
+                        $d['iconUrl'] =   $url;
+                        $d['version'] =  $data['version'];
+                        $d['createdBy'] =  $data['createdBy'];
+                        $d['createdTime'] =  $data['createdTime'];
+                        $d['lastUpdatedBy'] =  $data['lastUpdatedBy'];
+                        $d['lastUpdatedTime'] =  $data['lastUpdatedTime'];
+                    
+                        return $d;
+                    
+                    });
+                    
                     $a=['responseCode' => '0000', 
                                     'responseDesc' => "OK",
                                     'pageSize'  =>  $pageSize,
                                     'totalPage' => ceil($count/$pageSize),
                                     'total' => $count,
-                                    'rows' =>$results
+                                    'rows' =>$result2
  									
                                     ];    
                     return $this->listResponse($a,$request);
@@ -93,12 +121,13 @@ class ApplicationController extends Controller
        
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:100',
-            'packageName' =>  'required|max:255',
+            'packageName' =>  'required',//|max:255|unique:tms_application
             'appVersion' => 'required|max:50',
             'description' => 'max:255',
             'uninstallable'=>   ['required', Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],
             'companyName'=>  'required|max:100', 
 			'deviceModelId' => 'required', 
+            'icon' => 'image|mimes:jpeg,png,jpg,gif,svg',
           
         ]);
  
@@ -118,15 +147,37 @@ class ApplicationController extends Controller
             $path =null;
             if($request->file('icon'))
             {
-                $path =$cloud->put(env('MINIO_BUCKET_ICON_PATH_SERVER'), $request->file('icon'));
+                //$path =$cloud->put("icons", $request->file('icon'));
+                $file = $request->file('icon');
+                $filename = now()->getTimestampMs().''.$file->getClientOriginalName();
+                $path = $cloud->putFileAs("icons", $request->file('icon'),$filename);
             }
             
             $path2 =null;
             if($request->file('apk'))
             {
-                $path2 = $cloud->put(env('MINIO_BUCKET_APP_PATH_SERVER'), $request->file('apk'));
+                //$path2 = $cloud->put(env('MINIO_BUCKET_APP_PATH_SERVER'), $request->file('apk'));
+                //$path2 = $cloud->put(env('MINIO_BUCKET_APP_PATH_SERVER'), $request->apk);
+                //$path2 = $cloud->put('apps',$request->file('apk'),['mimetype' => 'application/vnd.android.package-archive']);
+                $file = $request->file('apk');
+                $filename = now()->getTimestampMs().''.$file->getClientOriginalName();
+                $fileext = $file->getClientOriginalExtension();
+                if($fileext != 'apk')
+                {
+                    $a  =   [   
+                        "responseCode"=>"5555",
+                        "responseDesc"=> array("apk"=> [
+                            "The apk must be a file of type: apk."
+                        ])
+                        ];    
+                    return $this->headerResponse($a,$request);
+                }
+                
+                $path2 = $cloud->putFileAs("apps", $request->file('apk'),$filename);
+              
             } 
 
+         
           
             $app = new Application();
             $app->version = 1; 
@@ -137,8 +188,8 @@ class ApplicationController extends Controller
             $app->uninstallable = $request->uninstallable;
             $app->company_name = $request->companyName;
             $app->checksum = MD5($request->file('apk'));
-            $app->unique_name = substr($path2,6); 
-            $app->unique_icon_name = substr($path,6);
+            $app->unique_name = substr($path2,5); 
+            $app->unique_icon_name =substr($path,6);
             $app->icon_url = $path;
             $app->tenant_id = $request->header('tenant-id');
             $app->device_model_id = $request->deviceModelId;
@@ -149,7 +200,7 @@ class ApplicationController extends Controller
                 $a  =   [   
                     "responseCode"=>"0000",
                     "responseDesc"=>"OK",
-                    "generatedId" =>  $app->id
+                    "generatedId" => $app->id
                     ];    
             return $this->headerResponse($a,$request);
     
@@ -200,6 +251,7 @@ class ApplicationController extends Controller
             'uninstallable'=>  ['required', Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],  
             'companyName'=>  'required|max:100', 
 			'device_model_id' => 'required', 
+            'icon' => 'image|mimes:jpeg,png,jpg,gif,svg',
           
         ]);
 		
@@ -233,13 +285,31 @@ class ApplicationController extends Controller
                     $path =null;
                     if($request->file('icon'))
                     {
-                        $path = $cloud->put(env('MINIO_BUCKET_ICON_PATH_SERVER'), $request->file('icon'));
+                        //$path = $cloud->put(env('MINIO_BUCKET_ICON_PATH_SERVER'), $request->file('icon'));
+                        $file = $request->file('icon');
+                        $filename = now()->getTimestampMs().''.$file->getClientOriginalName();
+                        $path = $cloud->putFileAs("icons", $request->file('icon'),$filename);
                     }
                     
                     $path2 =null;
                     if($request->file('apk'))
                     {
-                        $path2 = $cloud->put(env('MINIO_BUCKET_APP_PATH_SERVER'), $request->file('apk'));
+                        //$path2 = $cloud->put(env('MINIO_BUCKET_APP_PATH_SERVER'), $request->file('apk'));
+                        $file = $request->file('apk');
+                        $filename = now()->getTimestampMs().''.$file->getClientOriginalName();
+                        $fileext = $file->getClientOriginalExtension();
+                        if($fileext != 'apk')
+                        {
+                            $a  =   [   
+                                "responseCode"=>"5555",
+                                "responseDesc"=> array("apk"=> [
+                                    "The apk must be a file of type: apk."
+                                ])
+                                ];    
+                            return $this->headerResponse($a,$request);
+                        }
+                        
+                        $path2 = $cloud->putFileAs("apps", $request->file('apk'),$filename);
                     } 
                     $app->version =  $request->version + 1; 
                     $app->name = $request->name;
@@ -249,9 +319,11 @@ class ApplicationController extends Controller
                     $app->uninstallable = $request->uninstallable;
                     $app->company_name = $request->companyName;
                     $app->checksum = MD5($request->file('apk'));
-                    $app->unique_name = substr($path2,6); //apk
-                    $app->unique_icon_name = substr($path,6);//icon $request->name.'-ICO-'.date('YmdHis');
-                    //$app->apk = $request->apk;
+                    //$app->unique_name = $path2; //apk
+                    //$app->unique_icon_name = $path;
+                    $app->unique_name = substr($path2,5); 
+                    $app->unique_icon_name =substr($path,6);
+                  
                     $app->icon_url = $path;
                     $app->tenant_id = $request->header('tenant-id');
                     $app->deviceModelId = $request->deviceModelId;
@@ -310,14 +382,14 @@ class ApplicationController extends Controller
 			->whereNull('deleted_by')
 			->with(['deviceModel' => function ($query) {
                     $query->select('id', 'model');
-					//$query->orderBy('id');
+					
             }]);
 			
             
             if($app->get()->count()>0)
             {
                 $app =  $app->get()->makeHidden(['deleted_by', 'delete_ts']);
-                
+                $urlIcon = \Storage::cloud()->temporaryUrl($app[0]['icon_url'],\Carbon\Carbon::now()->addMinutes(30));
                 $jsonr =[
                     "id" => $app[0]['id'],
                     "packageName" => $app[0]['package_name'],
@@ -326,7 +398,7 @@ class ApplicationController extends Controller
                     "appVersion" => $app[0]['app_version'],
                     "uninstallable" => $app[0]['uninstallable'],
                     "companyName" => $app[0]['company_name'],
-                    "iconUrl"  => $app[0]['icon_url'],
+                    "iconUrl"  => $urlIcon,
 					"deviceModel" => $app[0]['deviceModel'],
                     "version" => $app[0]['version'],
                     "createdBy"=> $app[0]['created_by'],
@@ -425,9 +497,10 @@ class ApplicationController extends Controller
             $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $path = $m->select("icon_url")->get(); 
-                $path = $path[0]['icon_url'];
-                
+                $path = $m->select("unique_name")->get(); //unique_name icon_url
+                //$path = env('MINIO_BUCKET_ICON_PATH_SERVER')."\\".$path[0]['icon_url'];
+                //env('MINIO_BUCKET_ICON_PATH_SERVER')
+                $path = 'apps/'.$path[0]['unique_name'];
                 $url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(30));
     
                 $a  =   [   
