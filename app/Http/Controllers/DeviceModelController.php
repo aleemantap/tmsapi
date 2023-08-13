@@ -75,7 +75,7 @@ class DeviceModelController extends Controller
      
         $validator = Validator::make($request->all(), [
             'model' => 'required|max:50',
-            'vendorName' => 'required|max:100|unique:tms_device_model,vendor_name',
+            'vendorName' => 'required|max:100',
             'vendorCountry' => 'required',
            
         ]);

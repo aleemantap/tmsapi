@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class ApplicationController extends Controller
 {
@@ -94,7 +95,7 @@ class ApplicationController extends Controller
             'packageName' =>  'required|max:255',
             'appVersion' => 'required|max:50',
             'description' => 'max:255',
-            'uninstallable'=>  'boolean',  
+            'uninstallable'=>   ['required', Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],
             'companyName'=>  'required|max:100', 
 			'deviceModelId' => 'required', 
           
@@ -195,7 +196,7 @@ class ApplicationController extends Controller
             'packageName' =>  'required|max:255',
             'appVersion' => 'required|max:50',
             'description' => 'max:255',
-            'uninstallable'=>  'boolean',  
+            'uninstallable'=>  ['required', Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],  
             'companyName'=>  'required|max:100', 
 			'device_model_id' => 'required', 
           
