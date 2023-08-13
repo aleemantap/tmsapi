@@ -31,7 +31,7 @@ class DeviceModelController extends Controller
                 }
                 if($request->vendorCountry != '')
                 {
-                    $query->where('vendorCountry', 'ILIKE', '%' . $request->vendorCountry .'%');
+                    $query->where('vendor_country', 'ILIKE', '%' . $request->vendorCountry .'%');
                 }
                
                 $count = $query->get()->count();

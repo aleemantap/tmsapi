@@ -19,7 +19,7 @@ class DeviceProfileController extends Controller
             $pageSize = ($request->pageSize)?$request->pageSize:10;
             $pageNum = ($request->pageNum)?$request->pageNum:1;
                 
-                $query = DeviceProfile::select('id', 'name', 'is_default as default','version','created_by as createdBy','create_ts as createdTime','updated_by as lastUpdateBy','update_ts as lastUpdateBy')
+                $query =  DeviceProfile::select('id', 'name', 'is_default as default','version','created_by as createdBy','create_ts as createdTime','updated_by as updatedBy','update_ts as lastUpdateTime')
                 ->where('tenant_id','=', $request->header('Tenant-id'))
                 ->whereNull('deleted_by');
 
@@ -271,7 +271,7 @@ class DeviceProfileController extends Controller
             'version as version',
             'created_by as createdBy',
             'create_ts as createdTime',
-            'updated_by as lastUpdateBy',
+            'updated_by as updatedBy',
             'update_ts as lastUpdateTime'
             )
             ->where('id', $request->id)
