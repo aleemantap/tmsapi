@@ -4,27 +4,27 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Uuid;
+//use App\Models\Heartbeat;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 
-class LastDiagnosticInfo extends Model 
+class LastDiagnosticInfoView extends Model 
 {
     use HasFactory;
     use Uuid;
 	
-    protected $table = "tms_last_diagnostic_info";
-	public $timestamps = false;
-    
-    
+    protected $table = "tms_v_last_diagnostic_info";
+    //const CREATED_AT = 'create_ts';
+    //const UPDATED_AT = 'update_ts';
+	//public $timestamps = false;
     /**
      * The name of the "updated at" column.
      *
      * @var string
      */
-    public function terminal()
-    {
-        return $this->hasMany('App\Models\Terminal','terminal_id','id');
-    }
+   
    
 
+    
 }
+
