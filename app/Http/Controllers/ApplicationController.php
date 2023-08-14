@@ -15,12 +15,6 @@ class ApplicationController extends Controller
     public function list(Request $request){
 
         try {
-                //$path = $m->select("icon_url")->get(); 
-                //$path = $path[0]['icon_url'];
-                
-                //$url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(30));
-    
-
             $pageSize = ($request->pageSize)?$request->pageSize:10;
             $pageNum = ($request->pageNum)?$request->pageNum:1;
             $keyword = 'tes';
@@ -250,7 +244,7 @@ class ApplicationController extends Controller
             'description' => 'max:255',
             'uninstallable'=>  ['required', Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],  
             'companyName'=>  'required|max:100', 
-			'device_model_id' => 'required', 
+			'deviceModelId' => 'required', 
             'icon' => 'image|mimes:jpeg,png,jpg,gif,svg',
           
         ]);
@@ -326,7 +320,7 @@ class ApplicationController extends Controller
                   
                     $app->icon_url = $path;
                     $app->tenant_id = $request->header('tenant-id');
-                    $app->deviceModelId = $request->deviceModelId;
+                    $app->device_model_id = $request->deviceModelId;
                     $this->updateAction($request, $app); 
                 
                     if ($app->save()) {
