@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Uuid;
+use App\Models\Heartbeat;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 //use App\Blameable;
 
@@ -23,11 +24,7 @@ class Terminal extends Model
      * @var string
      */
    
-	// public function state()
-    // {
-       
-    //     return $this->hasMany('App\Models\State');
-    // }
+	
 
     public function TerminalGroupLink()
     {
@@ -66,4 +63,12 @@ class Terminal extends Model
     {
         return $this->belongsTo('App\Models\DownloadTask','download_task_id','id');
     }
+
+    public function lastHeartBeat()
+    {
+        //return $this->belongsTo('App\Models\LastHeartbeat');
+        return $this->belongsToMany(Heartbeat::class, 'tms_last_heartbeat');
+    }
+
+    
 }

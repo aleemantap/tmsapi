@@ -16,7 +16,7 @@ use App\Http\Controllers\TerminalGroupController;
 use App\Http\Controllers\TerminalController;
 use App\Http\Controllers\DownloadTaskController;
 use App\Http\Controllers\DeleteTaskController;
-//use App\Http\Controllers\HeartBeatController;
+use App\Http\Controllers\DiagnosticController;
 
 
 /*
