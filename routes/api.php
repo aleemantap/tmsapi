@@ -152,6 +152,12 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->post('/deleteTask/history', [DeleteTaskController::class,'history']);
         $router->post('/deleteTask/terminalHistory', [DeleteTaskController::class,'terminalHistory']);
         $router->post('/deleteTask/cancel', [DeleteTaskController::class,'cancel']);
+
+        /* router  Diagnostic */
+        $router->get('/diagnostic/lastHeartbeat', [DiagnosticController::class,'lastHeartbeat']);
+        $router->get('/diagnostic/lastDiagnostic', [DiagnosticController::class,'lastDiagnostic']);
+
+        
         
         
     
