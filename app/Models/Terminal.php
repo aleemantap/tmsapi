@@ -5,8 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Uuid;
 use App\Models\Heartbeat;
+use App\Models\DiagnosticInfo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-//use App\Blameable;
+
 
 class Terminal extends Model 
 {
@@ -68,6 +69,12 @@ class Terminal extends Model
     {
         //return $this->belongsTo('App\Models\LastHeartbeat');
         return $this->belongsToMany(Heartbeat::class, 'tms_last_heartbeat');
+    }
+
+    public function lastDiagnosticInfo()
+    {
+       
+        return $this->belongsToMany(DiagnosticInfo::class, 'tms_last_diagnostic_info');
     }
 
     
