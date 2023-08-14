@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\Uuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-//use App\Blameable;
+use App\Models\Terminal;
 
 class HeartBeat extends Model 
 {
@@ -20,6 +20,10 @@ class HeartBeat extends Model
     //{
     //    return $this->belongsTo('App\Models\State', 'states_id', 'id');
     //}
-
+    
+    public function terminals()
+    {
+        return $this->belongsToMany(Terminal::class, 'tms_last_heartbeat');
+    }
 
 }
