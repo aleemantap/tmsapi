@@ -21,6 +21,12 @@ class LastHeartBeatView extends Model
      *
      * @var string
      */
+
+     protected $casts = [
+        'batteryTemp' => 'float',
+        'latitude' => 'float',
+        'longitude' => 'float',
+    ];
    
 	
 
