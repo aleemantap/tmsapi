@@ -131,6 +131,23 @@ class DiagnosticController extends Controller
                 'total_length_printed as totalLengthPrinted',
                 'swiping_card_times as swipingCardTimes',
                 'dip_inserting_times as dipInsertingTimes',
+                'nfc_card_reading_times as nfcCardReadingTimes',
+                'front_camera_open_times as frontCameraOpenTimes',
+                'rear_camera_open_times as rearCameraOpenTimes',
+                'charge_times as chargeTimes',
+                'total_memory as totalMemory',
+                'available_memory as availableMemory',
+                'total_flash_memory as totalFlashMemory',
+                'available_flash_memory as availableFlashMemory',
+                'total_mobile_data as totalMobileData',
+                'current_boot_time as currentBootTime',
+                'total_boot_time as totalBootTime',
+                'total_length_printed as totalLengthPrinted',
+                'cell_name as cellName',
+                'cell_type as cellType',
+                'cell_strength as cellStrength',
+                'update_time as updateTime',
+                'installed_apps_string as installedAppsString',
                 
             )
             ->where('tms_v_last_diagnostic_info.tenant_id',$request->header('Tenant-id'));
@@ -150,12 +167,53 @@ class DiagnosticController extends Controller
             
             if($app->get()->count()>0)
             {
-                $app =  $app->get();
+                
+
+                $appAll =  $app->get()->toArray();
+              
+                $app2 = collect($appAll)->map(function ($data) {
+
+                    $d = [];
+                    $d['sn']              = $data['sn']; 
+                    $d['batteryTemp'] = $data['batteryTemp']; 
+                    $d['batteryPercentage'] = $data['batteryPercentage']; 
+                    $d['latitude'] = $data['latitude']; 
+                    $d['meid'] = $data['meid'];
+                    $d['totalMemory'] = $data['totalMemory'];
+                    $d['totalFlashMemory'] =  $data['totalFlashMemory'];
+                    $d['availableFlashMemory'] =  $data['availableFlashMemory'];
+                    $d['totalMobileData'] =  $data['totalMobileData']; 
+                    $d['switchingTimes'] =  $data['switchingTimes'];
+                    $d['currentBootTime'] =  $data['currentBootTime'];
+                    $d['totalBootTime'] =  $data['totalBootTime'];
+                    $d['totalLengthPrinted'] =  $data['totalLengthPrinted'];
+                    $d['swipingCardTimes'] =  $data['swipingCardTimes'];
+                    $d['dipInsertingTimes'] =  $data['dipInsertingTimes'];
+                    $d['nfcCardReadingTimes'] =  $data['nfcCardReadingTimes'];
+                    $d['frontCameraOpenTimes'] =  $data['frontCameraOpenTimes'];
+                    $d['rearCameraOpenTimes'] =  $data['rearCameraOpenTimes'];
+                    $d['chargeTimes'] =  $data['chargeTimes'];
+                    $d['totalMemory'] =  $data['totalMemory'];
+                    $d['availableMemory'] =  $data['availableMemory'];
+                    $d['totalFlashMemory'] =  $data['totalFlashMemory'];
+                    $d['availableFlashMemory'] =  $data['availableFlashMemory'];
+                    $d['totalMobileData'] =  $data['totalMobileData'];
+                    $d['currentBootTime'] =  $data['currentBootTime'];
+                    $d['totalBootTime'] =  $data['totalBootTime'];
+                    $d['totalLengthPrinted'] =  $data['totalLengthPrinted'];
+                    $d['cellName'] =  $data['cellName'];
+                    $d['cellType'] =  $data['cellType'];
+                    $d['cellStrength'] =  $data['cellStrength'];
+                    $d['updateTime'] =  $data['updateTime'];
+                    $d['installedApps'] =  json_decode($data['installedAppsString']);
+                    return $d;
+                
+                });
                
 
                 $a=["responseCode"=>"0000",
                     "responseDesc"=>"OK",
-                     "data" => $app
+                     "data" => $app2
                     ];    
                 return $this->headerResponse($a,$request);
             }

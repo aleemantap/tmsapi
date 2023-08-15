@@ -23,6 +23,23 @@ class LastDiagnosticInfoView extends Model
      * @var string
      */
    
+    protected $installedApps = array();
+
+    public function getInstalledApps() {
+        return $this->installedApps;
+    }
+
+    public function setInstalledApps($installedApps) {
+        $this->installedApps = $installedApps;
+    }
+
+    protected $casts = [
+        'batteryTemp' => 'float',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'totalLengthPrinted' => 'float',
+    ];
+
    
 
     
