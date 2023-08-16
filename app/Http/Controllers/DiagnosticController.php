@@ -205,7 +205,15 @@ class DiagnosticController extends Controller
                     $d['cellType'] =  $data['cellType'];
                     $d['cellStrength'] =  $data['cellStrength'];
                     $d['updateTime'] =  $data['updateTime'];
-                    $d['installedApps'] =  json_decode($data['installedAppsString']);
+                  
+                    $child = json_decode($data['installedAppsString']);
+                    $d['installedApps'] =  collect($child)->map(function ($dt) {
+                                                $a = [];
+                                                $a['appName']  = $dt->app_name;
+                                                $a['packageName']  = $dt->package_name;
+                                                $a['appVersion']  = $dt->app_version;
+                                                return $a;
+                                            }); 
                     return $d;
                 
                 });
