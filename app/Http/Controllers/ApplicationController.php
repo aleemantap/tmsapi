@@ -71,7 +71,11 @@ class ApplicationController extends Controller
                   
                     $result2 = collect($results)->map(function ($data) {
 
-                        $url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(30));
+                        $url = null;
+                        if($data['iconUrl'])
+                        { 
+                         $url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(30));
+                        }
     
                         $d = [];
                         $d['id']              = $data['id']; 
@@ -399,7 +403,14 @@ class ApplicationController extends Controller
             if($app->get()->count()>0)
             {
                 $app =  $app->get()->makeHidden(['deleted_by', 'delete_ts']);
-                $urlIcon = \Storage::cloud()->temporaryUrl($app[0]['icon_url'],\Carbon\Carbon::now()->addMinutes(30));
+
+                $urlIcon = null;
+                if($app['icon_url'] != "")
+                { 
+                  $urlIcon = \Storage::cloud()->temporaryUrl($app[0]['icon_url'],\Carbon\Carbon::now()->addMinutes(30));
+                }
+
+               
                 $jsonr =[
                     "id" => $app[0]['id'],
                     "packageName" => $app[0]['package_name'],
@@ -507,16 +518,17 @@ class ApplicationController extends Controller
             $cn = $m->get()->count();
              if( $cn > 0)
              {
-                $path = $m->select("unique_name")->get(); //unique_name icon_url
+                $path = $m->select("unique_name","checksum")->get(); //unique_name icon_url
                 //$path = env('MINIO_BUCKET_ICON_PATH_SERVER')."\\".$path[0]['icon_url'];
                 //env('MINIO_BUCKET_ICON_PATH_SERVER')
-                $path = 'apps/'.$path[0]['unique_name'];
-                $url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(30));
+                $path2 = 'apps/'.$path[0]['unique_name'];
+                $url = \Storage::cloud()->temporaryUrl($path2,\Carbon\Carbon::now()->addMinutes(30));
     
                 $a  =   [   
                 "responseCode"=>"0000",
                 "responseDesc"=>"OK",
-                "url" => $url
+                "url" => $url,
+                "md5" => $path[0]['checksum']
                 ];    
                 return $this->headerResponse($a,$request);
                
