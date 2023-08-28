@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\Application;
 use App\Models\DeviceModel;
+use App\Models\Terminal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -47,6 +48,18 @@ class ApplicationController extends Controller
                 {
                     $query->where('name', 'ILIKE','%'.$request->name.'%');
                 }
+
+                if($request->sn != '')
+                {
+                    $q = Terminal::select('model_id')->where('sn',$request->sn);
+                    $cnt = $q->get()->count();
+                    if($cnt>0){
+
+                        $query->where('device_model_id', $q->get()[0]->model_id);
+                    }
+                   
+                }
+
                 $count = $query->get()->count();
                 $results = $query->offset(($pageNum-1) * $pageSize) 
                 ->limit($pageSize)->orderBy('create_ts', 'DESC')
@@ -122,6 +135,7 @@ class ApplicationController extends Controller
             'companyName'=>  'required|max:100', 
 			'deviceModelId' => 'required', 
             'icon' => 'image|mimes:jpeg,png,jpg,gif,svg',
+            'apk' => 'max:51200',
           
         ]);
  
@@ -167,7 +181,8 @@ class ApplicationController extends Controller
                     return $this->headerResponse($a,$request);
                 }
                 
-                $path2 = $cloud->putFileAs("apps", $request->file('apk'),$filename);
+                //$path2 = $cloud->putFileAs("apps", $request->file('apk'),$filename);
+                $path2 = $cloud->put("apps", $request->file('apk'));
               
             } 
 
@@ -246,6 +261,7 @@ class ApplicationController extends Controller
             'companyName'=>  'required|max:100', 
 			'deviceModelId' => 'required', 
             'icon' => 'image|mimes:jpeg,png,jpg,gif,svg',
+            'apk' => 'max:51200',
           
         ]);
 		

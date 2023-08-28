@@ -61,6 +61,7 @@ return [
             'bucket' => env('MINIO_BUCKET'),
             'url' => env('MINIO_URL'),
             'endpoint' => env('MINIO_ENDPOINT'),
+            'use_path_style_endpoint' => true,
             'options' => [
                 "mimeType" => "application/vnd.android.package-archive",
             ]
