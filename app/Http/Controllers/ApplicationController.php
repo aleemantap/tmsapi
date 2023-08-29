@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\Application;
+use App\Models\ApplicationView;
 use App\Models\DeviceModel;
 use App\Models\Terminal;
 use Illuminate\Http\Request;
@@ -13,15 +14,16 @@ use Illuminate\Support\Facades\Storage;
 
 class ApplicationController extends Controller
 {
+    
     public function list(Request $request){
 
         try {
             $pageSize = ($request->pageSize)?$request->pageSize:10;
             $pageNum = ($request->pageNum)?$request->pageNum:1;
-            $keyword = 'tes';
-                $query = Application::whereNull('deleted_by')
+            
+                $query = ApplicationView::whereNull('deleted_by')
                 ->where('tenant_id','=', $request->header('Tenant-id'))
-				->select(
+                ->select(
                     'id',
                     'package_name as packageName',
                     'name',
@@ -30,26 +32,28 @@ class ApplicationController extends Controller
                     'uninstallable',
                     'company_name as companyName',
                     'icon_url as iconUrl',
-					'version',
+            'file_size as fileSize',
+            'version',
                     'created_by as createdBy',
                     'create_ts as createdTime',
                     'updated_by as lastUpdatedBy',
-                    'update_ts as lastUpdatedTime'
+                    'update_ts as lastUpdatedTime',
+                    'icon_url_exp'
                 )
-                ->addSelect(['deviceModelName' => DeviceModel::select('model')->whereColumn('id', 'tms_application.device_model_id')]);
-				
-				
-				if($request->deviceModelId != '')
+                ->addSelect(['deviceModelName' => DeviceModel::select('model')->whereColumn('id', 'tms_v_application.device_model_id')]);
+                
+                
+                if($request->deviceModelId != '')
                 {
                     $query->where('device_model_id',$request->deviceModelId);
                 }
-				
+                
                 if($request->name != '')
                 {
                     $query->where('name', 'ILIKE','%'.$request->name.'%');
                 }
-
-                if($request->sn != '')
+        
+         if($request->sn != '')
                 {
                     $q = Terminal::select('model_id')->where('sn',$request->sn);
                     $cnt = $q->get()->count();
@@ -58,25 +62,53 @@ class ApplicationController extends Controller
                         $query->where('device_model_id', $q->get()[0]->model_id);
                     }
                    
-                }
-
+                }       
+    
                 $count = $query->get()->count();
                 $results = $query->offset(($pageNum-1) * $pageSize) 
                 ->limit($pageSize)->orderBy('create_ts', 'DESC')
-				
-			    ->get()->makeHidden(['deviceModelId']);
+                
+                ->get()->makeHidden(['deviceModelId']);
                 
                 if($count > 0)
                 {
                   
                     $result2 = collect($results)->map(function ($data) {
 
-                        $url = null;
+                        
+                        /* $url = null;
                         if($data['iconUrl'])
                         { 
                          $url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(30));
+                        } */
+                       
+
+                        $dtime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $data['icon_url_exp']);
+                        
+                        $url = null;
+                        $expired = null;
+                        if($data['icon_url_exp']!==''){
+                            if(\Carbon\Carbon::now() < $dtime )
+                            {
+                                $url = $data['iconUrl']; 
+                                //$expired  = $data['icon_url_exp']; 
+                            }
+                            else if(\Carbon\Carbon::now() >= $dtime)
+                            {
+                                $url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(10075));
+                                $expired  = \Carbon\Carbon::now()->addMinutes(10075);
+                                $update = DB::table('tms_application') ->where('id', $data['id'])
+                                ->limit(1)->update( [ 'icon_url_exp' => $expired,'icon_url'=>$url]);
+                                
+                            } 
+                        }else{
+                                $url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(10075));
+                                $expired  = \Carbon\Carbon::now()->addMinutes(10075);
+                                $update = DB::table('tms_application') ->where('id', $data['id'])
+                                ->limit(1)->update( [ 'icon_url_exp' => $expired,'icon_url'=>$url]);
                         }
-    
+
+
                         $d = [];
                         $d['id']              = $data['id']; 
                         $d['packageName'] = $data['packageName']; 
@@ -86,6 +118,7 @@ class ApplicationController extends Controller
                         $d['uninstallable'] = $data['uninstallable'];
                         $d['companyName'] =  $data['companyName'];
                         $d['iconUrl'] =   $url;
+            $d['fileSize'] = $data['fileSize'];
                         $d['version'] =  $data['version'];
                         $d['createdBy'] =  $data['createdBy'];
                         $d['createdTime'] =  $data['createdTime'];
@@ -102,7 +135,7 @@ class ApplicationController extends Controller
                                     'totalPage' => ceil($count/$pageSize),
                                     'total' => $count,
                                     'rows' =>$result2
- 									
+                                    
                                     ];    
                     return $this->listResponse($a,$request);
                 }
@@ -126,7 +159,6 @@ class ApplicationController extends Controller
 
         }
     }
-    
    
     public function create(Request $request){
        
@@ -137,9 +169,9 @@ class ApplicationController extends Controller
             'description' => 'max:255',
             'uninstallable'=>   ['required', Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],
             'companyName'=>  'required|max:100', 
-			'deviceModelId' => 'required', 
+            'deviceModelId' => 'required', 
             'icon' => 'image|mimes:jpeg,png,jpg,gif,svg',
-            'apk' => 'max:51200',
+        'apk' => 'max:51200',   
           
         ]);
  
@@ -185,12 +217,11 @@ class ApplicationController extends Controller
                     return $this->headerResponse($a,$request);
                 }
                 
-                //$path2 = $cloud->putFileAs("apps", $request->file('apk'),$filename);
-                $path2 = $cloud->put("apps", $request->file('apk'));
+                $path2 = $cloud->putFileAs("apps", $request->file('apk'),$filename);
               
             } 
 
-         
+            
           
             $app = new Application();
             $app->version = 1; 
@@ -201,11 +232,14 @@ class ApplicationController extends Controller
             $app->uninstallable = $request->uninstallable;
             $app->company_name = $request->companyName;
             $app->checksum = MD5($request->file('apk'));
+        $app->file_size = $request->file('apk')->getSize();
             $app->unique_name = substr($path2,5); 
             $app->unique_icon_name =substr($path,6);
-            $app->icon_url = $path;
+            $app->icon_url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(10075));
+            //$url = 
             $app->tenant_id = $request->header('tenant-id');
             $app->device_model_id = $request->deviceModelId;
+            $app->icon_url_exp = \Carbon\Carbon::now()->addMinutes(10075);
             $this->saveAction($request,$app);
         
             if ($app->save()) {
@@ -254,21 +288,21 @@ class ApplicationController extends Controller
             $appa['name'] = 'required|max:100';
             $appa['packageName'] = 'required|max:255';
         }
-		 $validator = Validator::make($request->all(),$appa);
-		*/
-		 $validator = Validator::make($request->all(), [
+         $validator = Validator::make($request->all(),$appa);
+        */
+         $validator = Validator::make($request->all(), [
             'name' => 'required|max:100',
             'packageName' =>  'required|max:255',
             'appVersion' => 'required|max:50',
             'description' => 'max:255',
             'uninstallable'=>  ['required', Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],  
             'companyName'=>  'required|max:100', 
-			'deviceModelId' => 'required', 
+            'deviceModelId' => 'required', 
             'icon' => 'image|mimes:jpeg,png,jpg,gif,svg',
-            'apk' => 'max:51200',
+        'apk' => 'max:51200',
           
         ]);
-		
+        
        
  
         if ($validator->fails()) {
@@ -338,7 +372,7 @@ class ApplicationController extends Controller
                     $app->unique_name = substr($path2,5); 
                     $app->unique_icon_name =substr($path,6);
                   
-                    $app->icon_url = $path;
+                    $app->icon_url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(10075));
                     $app->tenant_id = $request->header('tenant-id');
                     $app->device_model_id = $request->deviceModelId;
                     $this->updateAction($request, $app); 
@@ -391,27 +425,46 @@ class ApplicationController extends Controller
         
         try {
             $app = Application::
-			where('id', $request->id)
+            where('id', $request->id)
             ->where('tenant_id',$request->header('Tenant-id'))
-			->whereNull('deleted_by')
-			->with(['deviceModel' => function ($query) {
+            ->whereNull('deleted_by')
+            ->with(['deviceModel' => function ($query) {
                     $query->select('id', 'model');
-					
+                    
             }]);
-			
+            
             
             if($app->get()->count()>0)
             {
                 $app =  $app->get()->makeHidden(['deleted_by', 'delete_ts']);
+                
+              
+                $dtime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $app[0]['icon_url_exp']);
 
                 $urlIcon = null;
-                if($app['icon_url'] != "")
-                { 
-                  $urlIcon = \Storage::cloud()->temporaryUrl($app[0]['icon_url'],\Carbon\Carbon::now()->addMinutes(30));
+                $expired = null;
+                if($app[0]['icon_url_exp']!==''){
+                    if(\Carbon\Carbon::now() < $dtime )
+                    {
+                        $urlIcon = $app[0]['icon_url']; 
+                       
+                    }
+                    else if(\Carbon\Carbon::now() >= $dtime)
+                    {
+                        $urlIcon = \Storage::cloud()->temporaryUrl($app[0]['icon_url'],\Carbon\Carbon::now()->addMinutes(10075));
+                        $expired  = \Carbon\Carbon::now()->addMinutes(10075);
+                        $update = DB::table('tms_application') ->where('id', $app[0]['id'])
+                        ->limit(1)->update( [ 'icon_url_exp' => $expired,'icon_url'=>$urlIcon]);
+                        
+                    }
+                }else{
+                    $urlIcon = \Storage::cloud()->temporaryUrl($app[0]['icon_url'],\Carbon\Carbon::now()->addMinutes(10075));
+                    $expired  = \Carbon\Carbon::now()->addMinutes(10075);
+                    $update = DB::table('tms_application') ->where('id', $app[0]['id'])
+                    ->limit(1)->update( [ 'icon_url_exp' => $expired,'icon_url'=>$urlIcon]);
                 }
-
-               
-                $jsonr =[
+                
+         $jsonr =[
                     "id" => $app[0]['id'],
                     "packageName" => $app[0]['package_name'],
                     "name" =>  $app[0]['name'],
@@ -420,7 +473,7 @@ class ApplicationController extends Controller
                     "uninstallable" => $app[0]['uninstallable'],
                     "companyName" => $app[0]['company_name'],
                     "iconUrl"  => $urlIcon,
-					"deviceModel" => $app[0]['deviceModel'],
+                    "deviceModel" => $app[0]['deviceModel'],
                     "version" => $app[0]['version'],
                     "createdBy"=> $app[0]['created_by'],
                     "createdTime" => $app[0]['create_ts'],
@@ -528,7 +581,7 @@ class ApplicationController extends Controller
                 "responseCode"=>"0000",
                 "responseDesc"=>"OK",
                 "url" => $url,
-                "md5" => $path[0]['checksum']
+        "md5"=>  $path[0]['checksum']
                 ];    
                 return $this->headerResponse($a,$request);
                
