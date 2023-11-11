@@ -189,7 +189,8 @@ class TerminalGroupController extends Controller
                     foreach ($request->terminalIds as $terminal) {
                         $dataSet[] = [
                             'terminal_id'  => $terminal,
-                            'terminal_group_id'    => $tg->id
+                            'terminal_group_id'    => $tg->id,
+                            'version' => 1
                         ];
                     }
 
@@ -257,7 +258,7 @@ class TerminalGroupController extends Controller
                 ['tenant_id',$request->header('Tenant-id')]
 
                
-            ])->whereNull('deleted_by');
+            ])->whereNull('deleted_by')->first();
 
             if($tg->get()->count()==0){
                 $a=["responseCode"=>"0400",
@@ -272,7 +273,7 @@ class TerminalGroupController extends Controller
             $this->updateAction($request, $tg);
                              
         
-            $this->save();
+            $tg->save();
 
             if($request->terminalIds){
 
@@ -281,7 +282,8 @@ class TerminalGroupController extends Controller
                     foreach ($request->terminalIds as $terminal) {
                         $dataSet[] = [
                             'terminal_id'  => $terminal,
-                            'terminal_group_id'    => $tg->id
+                            'terminal_group_id'    => $tg->id,
+                            'version' => $request->version + 1,
                         ];
                     }
 

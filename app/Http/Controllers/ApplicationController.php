@@ -76,11 +76,12 @@ class ApplicationController extends Controller
                     $result2 = collect($results)->map(function ($data) {
 
                         
-                        /* $url = null;
+                         $url = null;
                         if($data['iconUrl'])
                         { 
-                         $url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(30));
-                        } */
+                         //$url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(30));
+                         $url = \Storage::cloud()->temporaryUrl('icons/'.$data['unique_icon_name'],\Carbon\Carbon::now()->addMinutes(10075));
+                        } 
                        
 
                         $dtime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $data['icon_url_exp']);
@@ -95,14 +96,16 @@ class ApplicationController extends Controller
                             }
                             else if(\Carbon\Carbon::now() >= $dtime)
                             {
-                                $url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(10075));
+                                //$url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(10075));
+                                $url = \Storage::cloud()->temporaryUrl('icons/'.$data['unique_icon_name'],\Carbon\Carbon::now()->addMinutes(10075));
                                 $expired  = \Carbon\Carbon::now()->addMinutes(10075);
                                 $update = DB::table('tms_application') ->where('id', $data['id'])
                                 ->limit(1)->update( [ 'icon_url_exp' => $expired,'icon_url'=>$url]);
                                 
                             } 
                         }else{
-                                $url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(10075));
+                                //$url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(10075));
+                                $url = \Storage::cloud()->temporaryUrl('icons/'.$data['unique_icon_name'],\Carbon\Carbon::now()->addMinutes(10075));
                                 $expired  = \Carbon\Carbon::now()->addMinutes(10075);
                                 $update = DB::table('tms_application') ->where('id', $data['id'])
                                 ->limit(1)->update( [ 'icon_url_exp' => $expired,'icon_url'=>$url]);
@@ -232,7 +235,7 @@ class ApplicationController extends Controller
             $app->uninstallable = $request->uninstallable;
             $app->company_name = $request->companyName;
             $app->checksum = MD5($request->file('apk'));
-        $app->file_size = $request->file('apk')->getSize();
+            $app->file_size = $request->file('apk')->getSize();
             $app->unique_name = substr($path2,5); 
             $app->unique_icon_name =substr($path,6);
             $app->icon_url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(10075));
@@ -298,7 +301,7 @@ class ApplicationController extends Controller
             'uninstallable'=>  ['required', Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],  
             'companyName'=>  'required|max:100', 
             'deviceModelId' => 'required', 
-            'icon' => 'image|mimes:jpeg,png,jpg,gif,svg',
+            'icon' => 'image|mimes:jpeg,png,jpg,gif,svg|nullable',
         'apk' => 'max:51200',
           
         ]);

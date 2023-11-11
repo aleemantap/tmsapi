@@ -257,7 +257,7 @@ class DownloadTaskController extends Controller
             $dt->download_time_type = $request->downloadTimeType;
             $dt->tenant_id = $request->header('Tenant-id');
             //$dt->download_url = $request->download_url;
-            $this->saveActioin($request,$dt);
+            $this->saveAction($request,$dt);
             $dt->save();
           
             
@@ -397,7 +397,7 @@ class DownloadTaskController extends Controller
                 $dt->installation_time_type = $request->installationTimeType;
                 $dt->installation_time = $request->installationTime;
                 $dt->installation_notification = $request->installationNotification;
-                $this->updateActioin($request, $dt);
+                $this->updateAction($request, $dt);
                 $dt->save();
                 
 

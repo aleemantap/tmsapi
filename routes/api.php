@@ -17,6 +17,8 @@ use App\Http\Controllers\TerminalController;
 use App\Http\Controllers\DownloadTaskController;
 use App\Http\Controllers\DeleteTaskController;
 use App\Http\Controllers\DiagnosticController;
+use App\Http\Controllers\TenantController;
+
 
 
 /*
@@ -158,9 +160,23 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->get('/diagnostic/lastDiagnostic', [DiagnosticController::class,'lastDiagnostic']);
 
         
-        
+        /* router tenant */
+        $router->get('/tenant/list', [TenantController::class,'list']);
+        $router->get('/tenant/get', [TenantController::class,'show']);
+        $router->post('/tenant/add', [TenantController::class,'create']);
+        $router->post('/tenant/update', [TenantController::class,'update']);
+        $router->post('/tenant/delete', [TenantController::class,'delete']);
         
     
     });
+    
+
 
 });
+
+/* router tenant */
+Route::get('/v1/tenant/list', [TenantController::class,'list']);
+Route::get('/v1/tenant/get', [TenantController::class,'show']);
+Route::post('/v1/tenant/add', [TenantController::class,'create']);
+Route::post('/v1/tenant/update', [TenantController::class,'update']);
+Route::post('/v1/tenant/delete', [TenantController::class,'delete']);
