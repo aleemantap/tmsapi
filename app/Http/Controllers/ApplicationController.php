@@ -76,12 +76,11 @@ class ApplicationController extends Controller
                     $result2 = collect($results)->map(function ($data) {
 
                         
-                         $url = null;
+                          /* $url = null;
                         if($data['iconUrl'])
                         { 
-                         //$url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(30));
-                         $url = \Storage::cloud()->temporaryUrl('icons/'.$data['unique_icon_name'],\Carbon\Carbon::now()->addMinutes(10075));
-                        } 
+                         $url = \Storage::cloud()->temporaryUrl($data['iconUrl'],\Carbon\Carbon::now()->addMinutes(30));
+                        } */
                        
 
                         $dtime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $data['icon_url_exp']);
