@@ -14,11 +14,11 @@ class Acquirer extends Model
     protected $table = "tmsext_acquirer";
 	public $timestamps = false;
 
+	
 
 	public function tle_setting()
     {
-        //return $this->hasMany(Tlesetting::class);
-        return $this->hasMany('App\Models\Tlesetting');//, 'tle_setting_id', 'id'
+        return $this->hasMany('App\Models\Tlesetting');
     }
 
 

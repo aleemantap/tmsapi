@@ -297,14 +297,7 @@ class AcquirerController extends Controller
                 ];    
             return $this->headerResponse($a,$request);
         }
-        //tleSetting
-            // id
-            // tleId
-            //  tleEftSec
-            // acquirerId
-            // ltmkAid
-            //  vendorId
-            // tleVer
+     
         try {
             $ta = Acquirer::select(
                     'id',
@@ -314,7 +307,6 @@ class AcquirerController extends Controller
                     'host_id as hostId',
                     'settlement_host_id as settlementHostId',
                     'number_of_print as numberOfPrint',
-        
                     'resp_timeout as respTimeout',
                     'acquirer_id as acquirerId',
                     'host_destination_addr as hostDestAddr',
@@ -336,18 +328,27 @@ class AcquirerController extends Controller
                     'updated_by as lastUpdatedBy',
                     'update_ts as lastUpdatedTime'
                     )
+
             ->with(['tle_setting' => function ($query) {
-                        $query->select('id');
+                         $query->select('id','tle_id','tle_eft_sec','acquirer_id','ltmk_aid','vendor_id','tle_ver');
                         
-                    }])
+            }])
             ->where('id', 'ILIKE', '%' . $request->id . '%')
             ->whereNull('deleted_by')
             ->get();
             if($ta->count()>0)
             {
+                
+                $tas = $ta->map(function ($item) {
+                    $item['tleSetting'] = $item->tle_setting;
+                    return $item;
+                });
+
+               unset($tas[0]['tle_setting']);
+
                 $a=["responseCode"=>"0000",
                     "responseDesc"=>"OK",
-                     "data" => $ta
+                     "data" => $tas
                     ];    
                 return $this->headerResponse($a,$request);
             }
