@@ -18,6 +18,14 @@ use App\Http\Controllers\DownloadTaskController;
 use App\Http\Controllers\DeleteTaskController;
 use App\Http\Controllers\DiagnosticController;
 use App\Http\Controllers\TenantController;
+use App\http\Controllers\AidController;
+use App\http\Controllers\CapkController;
+use App\http\Controllers\PublicKeyController;
+use App\http\Controllers\TleSettingController;
+use App\http\Controllers\TerminalExtController;
+use App\http\Controllers\CardController;
+use App\http\Controllers\AcquirerController;
+use App\http\Controllers\IssuerController;
 
 
 
@@ -166,6 +174,65 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->post('/tenant/add', [TenantController::class,'create']);
         $router->post('/tenant/update', [TenantController::class,'update']);
         $router->post('/tenant/delete', [TenantController::class,'delete']);
+
+        /* router aid*/ 
+        $router->get('/aid/list', [AidController::class,'list']);
+        $router->post('/aid/add', [AidController::class,'add']);
+        $router->post('/aid/update', [AidController::class,'update']);
+        $router->post('/aid/delete', [AidController::class,'delete']);
+        $router->get('/aid/get', [AidController::class,'get']);
+aid,capk,publicKey,tleSetting,acquirer,terminalExt
+        /* router capk*/ 
+        $router->get('/capk/list', [CapkController::class,'list']);
+        $router->post('/capk/add', [CapkController::class,'add']);
+        $router->post('/capk/update', [CapkController::class,'update']);
+        $router->post('/capk/delete', [CapkController::class,'delete']);
+        $router->get('/capk/get', [CapkController::class,'get']);
+
+        /* router publicKey*/ 
+        $router->get('/publicKey/list', [PublicKeyController::class,'list']);
+        $router->post('/publicKey/add', [PublicKeyController::class,'add']);
+        $router->post('/publicKey/update', [PublicKeyController::class,'update']);
+        $router->post('/publicKey/delete', [PublicKeyController::class,'delete']);
+        $router->get('/publicKey/get', [PublicKeyController::class,'get']);
+
+        /* router TleSetting*/ 
+        $router->get('/tleSetting/list', [TleSettingController::class,'list']);
+        $router->post('/tleSetting/add', [TleSettingController::class,'add']);
+        $router->post('/tleSetting/update', [TleSettingController::class,'update']);
+        $router->post('/tleSetting/delete', [TleSettingController::class,'delete']);
+        $router->get('/tleSetting/get', [TleSettingController::class,'get']);
+
+        /* router terminalExt*/ 
+        $router->get('/terminalExt/list', [TerminalExtController::class,'list']); //L
+        $router->post('/terminalExt/add', [TerminalExtController::class,'add']);
+        $router->post('/terminalExt/update', [TerminalExtController::class,'update']);
+        $router->post('/terminalExt/delete', [TerminalExtController::class,'delete']); //L
+        $router->get('/terminalExt/get', [TerminalExtController::class,'get']); //L
+       
+        /* router acquirer*/ 
+        $router->post('/acquirer/add', [AcquirerController::class,'add']);
+        $router->post('/acquirer/update', [AcquirerController::class,'update']);
+        $router->post('/acquirer/delete', [AcquirerController::class,'delete']);
+        $router->get('/acquirer/list', [AcquirerController::class,'list']);
+        $router->get('/acquirer/get', [AcquirerController::class,'show']);
+
+        /* router issuer*/ 
+        $router->post('/issuer/add', [IssuerController::class,'add']);
+        $router->post('/issuer/update', [IssuerController::class,'update']);
+        $router->post('/issuer/delete', [IssuerController::class,'delete']);
+        $router->get('/issuer/list', [IssuerController::class,'list']);
+        $router->get('/issuer/get', [IssuerController::class,'show']);
+        $router->post('/issuer/linkUnlink', [IssuerController::class,'linkUnlink']); //L
+        
+
+        /* router card*/ 
+        $router->post('/card/add', [CardController::class,'add']);
+        $router->post('/card/update', [CardController::class,'update']);
+        $router->post('/card/delete', [CardController::class,'delete']);
+        $router->get('/card/list', [CardController::class,'list']);
+        $router->get('/card/get', [CardController::class,'show']);
+        $router->post('/card/linkUnlink', [CardController::class,'linkUnlink']); //L
         
     
     });
