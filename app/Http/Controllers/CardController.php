@@ -341,6 +341,47 @@ class CardController extends Controller
         }
     }
 
+    public function linkUnlink(Request $request){
+        DB::beginTransaction();
+        try {
+            $m = Card::where('id','=',$request->id)
+            ->whereNull('deleted_by')
+            ->where('version','=',$request->version);
+            
+             $cn = $m->get()->count();
+             if( $cn > 0)
+             {
+            
+                $re = $this->deleteAction($request,$m);
+               
+                if ($re) {
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
+                 }
+             }
+             else
+             {
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
+              }
+
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+    }
 
     
 }

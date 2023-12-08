@@ -22,25 +22,37 @@ class TerminalExtController extends Controller
                 $query = 
                 TerminalExt:: 
                 select('id',
-                        'sn',
-                        'tid',
-                        'mid',
-                        'merchantName1',
-                        'merchantName2',
-                        'merchantName3',
-                        'callCenter1',
-                        'callCenter2',
+                        //'sn',
+                        'terminal_id as tid',
+                        'merchant_id as mid',
+                        'merchant_name1 as merchantName1',
+                        'merchant_name2 as merchantName2',
+                        'merchant_name3 as merchantName3',
+                        'call_center1 as callCenter1',
+                        'call_center2 as callCenter2',
                         'version',
                         'created_by as createdBy',
                         'create_ts as createdTime',
                         'updated_by as lastUpdatedBy',
                         'update_ts as lastUpdatedTime')
-                ->whereNull('deleted_by');                
+                ->whereNull('deleted_by'); 
+
                 
+                if($request->merchantName != '')
+                {
+                    //$query->where('tle_id', 'ILIKE', '%' . $request->merchantName . '%');
+                    //$query->join('tmsext_terminal_ext.merchant_id','=','merchant.id');
+                    $rp = $request->merchantName;
+                    $query->whereHas('merchant', function($q) use ($rp) {
+                        $q->where('name', 'ILIKE', '%' . $rp . '%');
+                    });
+                }
+
+                /*
                 
                 if($request->terminalId != '')
                 {
-                    $query->where('tle_id', 'ILIKE', '%' . $request->terminalId . '%');
+                    $query->where('terminal_id', 'ILIKE', '%' . $request->terminalId . '%');
                 }
 
                 if($request->tid != '')
@@ -53,20 +65,16 @@ class TerminalExtController extends Controller
                     $query->where('tle_id', 'ILIKE', '%' . $request->mid . '%');
                 }
 
-                if($request->merchantName != '')
-                {
-                    $query->where('tle_id', 'ILIKE', '%' . $request->merchantName . '%');
-                }
 
                 if($request->sn != '')
                 {
                     $query->where('tle_id', 'ILIKE', '%' . $request->sn . '%');
-                }
+                }*/
 
                 $count = $query->get()->count();
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
-                ->limit($pageSize)->orderBy('tleId', 'ASC')->get();
+                ->limit($pageSize)->orderBy('create_ts', 'DESC')->get();
                 if( $count  > 0)
                 {
                 $a=['responseCode' => '0000', 

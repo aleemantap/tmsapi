@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 
 class IssuerController extends Controller
@@ -78,9 +79,6 @@ class IssuerController extends Controller
             'onUs' => $ruleBool,
             'acquirerId' => 'max:36' //uuid
 
-        ]; 
-
-            
         ]);
  
         if ($validator->fails()) {
@@ -207,7 +205,7 @@ class IssuerController extends Controller
         }
     }
     
-    public function get(Request $request){
+    public function show(Request $request){
         $validator = Validator::make($request->all(), [
             'id' => 'required|max:36'
         ]);
@@ -219,13 +217,7 @@ class IssuerController extends Controller
                 ];    
             return $this->headerResponse($a,$request);
         }
-        //acquirer
-            // id
-            // type
-            //  name
-            // description
-            // hostId
-            
+       
         try {
             $ta = Issuer::select(
                     'id',
@@ -233,6 +225,7 @@ class IssuerController extends Controller
                     'issuer_id as issuerId',
                     'on_us as onUs',
                     'version',
+                    'acquirer_id',
                     'created_by as createdBy',
                     'create_ts as createdTime',
                     'updated_by as lastUpdatedBy',
@@ -240,7 +233,11 @@ class IssuerController extends Controller
                     )
             ->where('id', 'ILIKE', '%' . $request->id . '%')
             ->whereNull('deleted_by')
-            ->get();
+            ->with(['acquirer' => function ($query) {
+                         $query->select('id', 'name','acquirer_type as type','description','host_id as hostId');
+                        
+                     }])
+            ->get()->makeHidden('acquirer_id');
             if($ta->count()>0)
             {
                 $a=["responseCode"=>"0000",
@@ -270,6 +267,48 @@ class IssuerController extends Controller
     }
 
     public function delete(Request $request){
+        DB::beginTransaction();
+        try {
+            $m = Issuer::where('id','=',$request->id)
+            ->whereNull('deleted_by')
+            ->where('version','=',$request->version);
+            
+             $cn = $m->get()->count();
+             if( $cn > 0)
+             {
+            
+                $re = $this->deleteAction($request,$m);
+               
+                if ($re) {
+                    DB::commit();
+                    $a  =   [   
+                        "responseCode"=>"0000",
+                        "responseDesc"=>"OK"
+                        ];    
+                    return $this->headerResponse($a,$request);
+                 }
+             }
+             else
+             {
+                $a  =   [   
+                    "responseCode"=>"0400",
+                    "responseDesc"=>"Data No Found"
+                    ];    
+                return $this->headerResponse($a,$request);
+              }
+
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $a  =   [   
+                "responseCode"=>"3333",
+                "responseDesc"=>$e->getMessage()
+                ];    
+            return $this->headerResponse($a,$request);
+        }
+    }
+
+     public function linkUnlink(Request $request){
         DB::beginTransaction();
         try {
             $m = Issuer::where('id','=',$request->id)

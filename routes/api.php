@@ -181,7 +181,7 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->post('/aid/update', [AidController::class,'update']);
         $router->post('/aid/delete', [AidController::class,'delete']);
         $router->get('/aid/get', [AidController::class,'get']);
-aid,capk,publicKey,tleSetting,acquirer,terminalExt
+
         /* router capk*/ 
         $router->get('/capk/list', [CapkController::class,'list']);
         $router->post('/capk/add', [CapkController::class,'add']);

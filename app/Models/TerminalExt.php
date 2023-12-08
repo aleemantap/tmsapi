@@ -13,5 +13,9 @@ class TerminalExt extends Model
     protected $table = "tmsext_terminal_ext";
 	public $timestamps = false;
 
-
+	
+	public function merchant()
+    {
+        return $this->hasMany('App\Models\Merchant');
+    }
 }

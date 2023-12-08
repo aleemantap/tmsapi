@@ -36,5 +36,13 @@ class Merchant extends Model
         return $this->belongsTo('App\Models\District');
     }
 
+    public function terminalExt()
+    {
+       
+         return $this->belongsTo('App\Models\TerminalExt','merchant_id','id');
+    }
+
+    
+
 
 }

@@ -330,7 +330,7 @@ class AcquirerController extends Controller
                     )
 
             ->with(['tle_setting' => function ($query) {
-                         $query->select('id','tle_id','tle_eft_sec','acquirer_id','ltmk_aid','vendor_id','tle_ver');
+                         $query->select('id','tle_id as tleId','tle_eft_sec as tleEftSec','acquirer_id as acquirerId','ltmk_aid as ltmkAid','vendor_id as vendorId','tle_ver as tleVer');
                         
             }])
             ->where('id', 'ILIKE', '%' . $request->id . '%')
