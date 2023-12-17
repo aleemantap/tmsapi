@@ -132,7 +132,7 @@ class DistrictController extends Controller
             $district = District::where([
                 ['id',$request->id],
                 ['version',$request->version],
-                ['city_id', $request->city_id]
+                //['city_id', $request->city_id]
             ])
             ->whereNull('deleted_by')
             ->first();

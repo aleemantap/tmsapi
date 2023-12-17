@@ -233,6 +233,14 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->get('/card/list', [CardController::class,'list']);
         $router->get('/card/get', [CardController::class,'show']);
         $router->post('/card/linkUnlink', [CardController::class,'linkUnlink']); //L
+
+
+        /* router template*/ 
+        $router->post('/template/add', [TemplateController::class,'add']);
+        $router->post('/template/update', [TemplateController::class,'update']);
+        $router->post('/template/delete', [TemplateController::class,'delete']);
+        $router->get('/template/list', [TemplateController::class,'list']);
+        $router->get('/template/get', [TemplateController::class,'show']);
         
     
     });
