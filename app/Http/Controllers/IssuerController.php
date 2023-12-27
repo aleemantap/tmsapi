@@ -19,7 +19,8 @@ class IssuerController extends Controller
                 $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $query = 
                 Issuer:: 
-                select('id','name','issuer_id  as issuerId','on_us as onUs','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+                select('id','name','issuer_id  as issuerId','on_us as onUs',
+                           'acquirer_id as acquirerId','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
                 ->whereNull('deleted_by');                
                 
                 

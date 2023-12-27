@@ -19,7 +19,7 @@ class AcquirerController extends Controller
                 $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $query = 
                 Acquirer:: 
-                select('id','name','version','acquirer_type as type','description','host_id as hostId','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+                select('id','name','version','acquirer_type as type','description','host_id as hostId','acquirer_id as acquirerId','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
                 ->whereNull('deleted_by');                
                 
                 
