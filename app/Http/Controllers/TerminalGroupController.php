@@ -25,6 +25,7 @@ class TerminalGroupController extends Controller
                     'tms_terminal_group.id',
                     'tms_terminal_group.name',
                     'tms_terminal.sn',
+                    'tms_terminal.id as terminalId',
                     'tms_terminal_group.description',
                     'tms_terminal_group.version',
                     'tms_terminal_group.created_by as createdBy',
@@ -40,7 +41,7 @@ class TerminalGroupController extends Controller
                  
                 if($request->id != '')
                 {
-                    $query->where('id', 'ILIKE', '%' . $request->id . '%');
+                    $query->where('tms_terminal_group.id', 'ILIKE', '%' . $request->id . '%');
                 }
                  
                 if($request->sn != '')
@@ -310,7 +311,7 @@ class TerminalGroupController extends Controller
     
     public function show(Request $request){
         $validator = Validator::make($request->all(), [
-            'id' => 'required|max:36'
+            'id' => 'required'
         ]);
  
         if ($validator->fails()) {
@@ -431,7 +432,7 @@ class TerminalGroupController extends Controller
             return $this->headerResponse($a,$request);
         }
 
-        $tgl= TerminalGroupLink::where('terminal_group_id',$request->id);
+        $tgl= TerminalGroupLink::where('terminal_group_id',$request->id)->whereIn('terminal_id',$request->terminalIds);
         
         
         $tg= TerminalGroup::where('id',$request->id)
@@ -458,7 +459,8 @@ class TerminalGroupController extends Controller
                     return $this->headerResponse($a,$request);
             
                 }elseif($cntgl==0 && $cntg>0){
-                    if($request->terminalIds){
+                    if($request->terminalIds)
+                    {
 
                         $dataSet = [];
                             foreach ($request->terminalIds as $terminal) {
@@ -468,20 +470,20 @@ class TerminalGroupController extends Controller
                                     'version'    => 1
                                 ];
                             }
-                    
-                    //TerminalGroup::where('id',$request->id)->where('version',$request->version)->update(['version' => $request->version+1]);
-                    
-                    $t = TerminalGroup::where([
-                        ['id',$request->id],
-                        ['version',$request->version],
-                        ['tenant_id',$request->header('Tenant-id')]
-                       
-                    ])->first();
-                    $t->version = $request->version + 1;
-                   
-                    $t->save();
-                    
-                    TerminalGroupLink::insert($dataSet);
+                            
+                            //TerminalGroup::where('id',$request->id)->where('version',$request->version)->update(['version' => $request->version+1]);
+                            
+                            $t = TerminalGroup::where([
+                                ['id',$request->id],
+                                ['version',$request->version],
+                                ['tenant_id',$request->header('Tenant-id')]
+                               
+                            ])->first();
+                            $t->version = $request->version + 1;
+                           
+                            $t->save();
+                            
+                            TerminalGroupLink::insert($dataSet);
                     
                     }
                     DB::commit();
@@ -524,7 +526,7 @@ class TerminalGroupController extends Controller
             return $this->headerResponse($a,$request);
         }
 
-        $tgl= TerminalGroupLink::where('terminal_group_id',$request->id);
+        $tgl= TerminalGroupLink::where('terminal_group_id',$request->id)->whereIn('terminal_id',$request->terminalIds);
         
         
         $tg= TerminalGroup::where('id',$request->id)

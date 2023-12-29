@@ -138,6 +138,7 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->post('/terminal/delete', [TerminalController::class,'delete']);
         $router->post('/terminal/restart', [TerminalController::class,'restart']);
         $router->post('/terminal/lockUnlock', [TerminalController::class,'lockUnlock']);
+        //$router->get('/terminal/getBySn', [TerminalController::class,'getBySn']);
     
         /* router download task*/ 
         $router->get('/downloadTask/list', [DownloadTaskController::class,'list']);
