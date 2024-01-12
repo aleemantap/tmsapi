@@ -47,11 +47,12 @@ class DiagnosticController extends Controller
                 'update_time as updateTime',
             )
             ->where('tms_v_last_heart_beat.tenant_id',$request->header('Tenant-id'));
-            
+            //->where('tms_v_last_heart_beat.tenant_id','testing');
 			
             if($request->sn != '')
             {
                 $app->where('tms_v_last_heart_beat.sn', $request->sn);
+
             }
 
             if($request->terminalId != '')
@@ -151,11 +152,13 @@ class DiagnosticController extends Controller
                 
             )
             ->where('tms_v_last_diagnostic_info.tenant_id',$request->header('Tenant-id'));
+            //->where('tms_v_last_diagnostic_info.tenant_id',"testing");
             
 			
             if($request->sn != '')
             {
                 $app->where('tms_v_last_diagnostic_info.sn', $request->sn);
+                //$app->where('tms_v_last_diagnostic_info.sn','ILIKE', '%'.$request->sn.'%');
             }
 
             if($request->terminalId != '')
@@ -205,7 +208,7 @@ class DiagnosticController extends Controller
                     $d['cellType'] =  $data['cellType'];
                     $d['cellStrength'] =  $data['cellStrength'];
                     $d['updateTime'] =  $data['updateTime'];
-                  
+
                     $child = json_decode($data['installedAppsString']);
                     $d['installedApps'] =  collect($child)->map(function ($dt) {
                                                 $a = [];

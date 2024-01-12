@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Card;
+use App\Models\ResponseCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
@@ -9,8 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 
-
-class CardController extends Controller
+class ResponseCodeController extends Controller
 {
     public function list(Request $request){
 
@@ -19,36 +18,31 @@ class CardController extends Controller
                 $pageSize = ($request->pageSize)?$request->pageSize:10;
                 $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $query = 
-                Card:: 
-                select('id',
-                        'name',
-                        'bin_range_start  as binRangeStart',
-                        'bin_range_end as binRangeEnd',
-                        'card_num_length as cardNumLength',
-                        'pan_digit_unmasking as panDigitUnmasking',
-                        'version',
-                        'created_by as createdBy',
-                        'create_ts as createdTime',
-                        'updated_by as lastUpdatedBy',
-                        'update_ts as lastUpdatedTime')
+                ResponseCode:: 
+                select('id','type','code','description','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
                 ->whereNull('deleted_by');                
-              
-
-                if($request->name != '')
+                
+                
+                if($request->type != '')
                 {
-                    $query->where('name', 'ILIKE', '%' . $request->name . '%');
+                    $query->where('type', 'ILIKE', '%' . $request->type . '%');
                 }
 
-                if($request->issuerId != '')
+                if($request->code != '')
                 {
-                   // $query->where('on_us',$request->issuerId);
+                    $query->where('code', 'ILIKE', '%' . $request->code . '%');
+                }
+
+                if($request->description != '')
+                {
+                    $query->where('description', 'ILIKE', '%' . $request->description . '%');
                 }
 
 
                 $count = $query->get()->count();
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
-                ->limit($pageSize)->orderBy('name', 'ASC')->get();
+                ->limit($pageSize)->orderBy('create_ts', 'DESC')->get();
                 if( $count  > 0)
                 {
                 $a=['responseCode' => '0000', 
@@ -75,21 +69,13 @@ class CardController extends Controller
         }
     }
 
+
     public function add(Request $request){
 
-        $ruleBool = [Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])];
         $validator = Validator::make($request->all(), [
-            'name' => 'required|max:100',
-            'binRangeStart' => 'required|max:10',
-            'binRangeEnd' => 'required|max:10',
-            'cardNumLength' => 'required|numeric',
-            'panDigitUnmasking' =>  ['required',Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],
-            'printCardholderCopy' =>   $ruleBool,
-            'printMerchantCopy' =>   $ruleBool,
-            'printBankCopy' =>    $ruleBool,
-            'pinPrompt' =>    $ruleBool,
-            'pinLength' => 'numeric'
-
+            'code' => 'required|max:2',
+            'type' => 'required|max:50',
+            'description' => 'required|max:255'
         ]);
  
         if ($validator->fails()) {
@@ -99,22 +85,16 @@ class CardController extends Controller
                 ];    
         return $this->headerResponse($a,$request);
         }
+        
         DB::beginTransaction();
+ 
         try {
 
-            $ta = new Card();
+            $ta = new ResponseCode();
             $ta->version = 1; 
-            $ta->name = $request->name;
-            $ta->bin_range_start =  $request->binRangeStart;
-            $ta->bin_range_end =  $request->binRangeEnd;
-            $ta->card_num_length =  $request->cardNumLength;
-            $ta->pan_digit_unmasking =  $request->panDigitUnmasking;
-            $ta->print_cardholder_copy =  $request->printCardholderCopy;
-            $ta->print_merchant_copy =  $request->printMerchantCopy;
-            $ta->print_bank_copy =  $request->printBankCopy;
-            $ta->pin_prompt =  $request->pinPrompt;
-            $ta->pin_length =  $request->pinLength;
-           
+            $ta->code = $request->code;
+            $ta->type = $request->type;
+            $ta->description = $request->description;
             $this->saveAction($request, $ta);
 
             if ($ta->save()) {
@@ -140,33 +120,23 @@ class CardController extends Controller
 
     public function update(Request $request){
 
-        $ruleBool = [Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])];
-      
-
-        $check = Card::where([
+    
+        $check = ResponseCode::where([
             ['id',$request->id],
             ['version',$request->version],
-            ['name',$request->name]
-            
+           
         ])->get();
 
-
+        
         $appa = [
-            'binRangeStart' => 'required|max:10',
-            'binRangeEnd' => 'required|max:10',
-            'cardNumLength' => 'required|numeric',
-            'panDigitUnmasking' =>  ['required',Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],
-            'printCardholderCopy' =>   $ruleBool,
-            'printMerchantCopy' =>   $ruleBool,
-            'printBankCopy' =>    $ruleBool,
-            'pinPrompt' =>    $ruleBool,
-            'pinLength' => 'numeric'    
+            'type' => 'required|max:50',
+            'description' => 'required|max:255'
+          
         ];
         
         if($check->count() == 0){
      
-            $appa['name'] = 'required|max:100';
-           
+            $appa['code'] = 'required|max:2';
         }
         $validator = Validator::make($request->all(),$appa);
  
@@ -182,10 +152,9 @@ class CardController extends Controller
 
         try {
 
-            $ta = Card::where([
+            $ta = ResponseCode::where([
                 ['id',$request->id],
                 ['version',$request->version]
-                
             ])
             ->whereNull('deleted_by')
             ->first();
@@ -198,17 +167,11 @@ class CardController extends Controller
             }
             
             $ta->version = $request->version + 1;
-            $ta->name = $request->name;
-            $ta->bin_range_start =  $request->binRangeStart;
-            $ta->bin_range_end =  $request->binRangeEnd;
-            $ta->card_num_length =  $request->cardNumLength;
-            $ta->pan_digit_unmasking =  $request->panDigitUnmasking;
-            $ta->print_cardholder_copy =  $request->printCardholderCopy;
-            $ta->print_merchant_copy =  $request->printMerchantCopy;
-            $ta->print_bank_copy =  $request->printBankCopy;
-            $ta->pin_prompt =  $request->pinPrompt;
-            $ta->pin_length =  $request->pinLength;
-            
+            $ta->type = $request->type;
+            $ta->code = $request->code;
+            $ta->description = $request->description;
+           
+
             $this->updateAction($request, $ta);
             
             if ($ta->save()) {
@@ -243,20 +206,13 @@ class CardController extends Controller
                 ];    
             return $this->headerResponse($a,$request);
         }
-       
+     
         try {
-            $ta = Card::select(
+            $ta = ResponseCode::select(
                     'id',
-                    'name',
-                    'bin_range_start as binRangeStart',
-                    'bin_range_end as binRangeEnd',
-                    'card_num_length as cardNumLength',
-                    'pan_digit_unmasking as panDigitUnmasking',
-                    'print_cardholder_copy as printCardholderCopy',
-                    'print_merchant_copy as printMerchantCopy',
-                    'print_bank_copy as printBankCopy',
-                    'pin_prompt as pinPrompt',
-                    'pin_length as pinLength',
+                    'type',
+                    'code',
+                    'description',
                     'version',
                     'created_by as createdBy',
                     'create_ts as createdTime',
@@ -268,6 +224,7 @@ class CardController extends Controller
             ->get();
             if($ta->count()>0)
             {
+                
                 $a=["responseCode"=>"0000",
                     "responseDesc"=>"OK",
                      "data" => $ta
@@ -297,7 +254,7 @@ class CardController extends Controller
     public function delete(Request $request){
         DB::beginTransaction();
         try {
-            $m = Card::where('id','=',$request->id)
+            $m = ResponseCode::where('id','=',$request->id)
             ->whereNull('deleted_by')
             ->where('version','=',$request->version);
             
@@ -336,47 +293,6 @@ class CardController extends Controller
         }
     }
 
-    public function linkUnlink(Request $request){
-        DB::beginTransaction();
-        try {
-            $m = Card::where('id','=',$request->id)
-            ->whereNull('deleted_by')
-            ->where('version','=',$request->version);
-            
-             $cn = $m->get()->count();
-             if( $cn > 0)
-             {
-            
-                $re = $this->deleteAction($request,$m);
-               
-                if ($re) {
-                    DB::commit();
-                    $a  =   [   
-                        "responseCode"=>"0000",
-                        "responseDesc"=>"OK"
-                        ];    
-                    return $this->headerResponse($a,$request);
-                 }
-             }
-             else
-             {
-                $a  =   [   
-                    "responseCode"=>"0400",
-                    "responseDesc"=>"Data No Found"
-                    ];    
-                return $this->headerResponse($a,$request);
-              }
-
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            $a  =   [   
-                "responseCode"=>"3333",
-                "responseDesc"=>$e->getMessage()
-                ];    
-            return $this->headerResponse($a,$request);
-        }
-    }
 
     
 }

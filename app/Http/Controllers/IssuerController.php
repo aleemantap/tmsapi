@@ -19,19 +19,21 @@ class IssuerController extends Controller
                 $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $query = 
                 Issuer:: 
-                select('id','name','issuer_id  as issuerId','on_us as onUs',
-                           'acquirer_id as acquirerId','version','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
-                ->whereNull('deleted_by');                
+                //DB::table('tmsext_issuer')->
+                whereNull('tmsext_issuer.deleted_by')
+                ->join('tmsext_acquirer', 'tmsext_issuer.acquirer_id', '=', 'tmsext_acquirer.id')
+                ->select('tmsext_issuer.id','tmsext_issuer.name','tmsext_issuer.issuer_id  as issuerId','on_us as onUs','tmsext_acquirer.name as acquirer','tmsext_acquirer.id as acquirer_id',
+                           'tmsext_acquirer.acquirer_id as acquirerId','tmsext_issuer.version','tmsext_issuer.created_by as createdBy','tmsext_issuer.create_ts as createdTime', 'tmsext_issuer.updated_by as lastUpdatedBy','tmsext_issuer.update_ts as lastUpdatedTime');
                 
                 
                 if($request->acquirerId != '')
                 {
-                    $query->where('acquirer_id', 'ILIKE', '%' . $request->acquirerId . '%');
+                    $query->where('tmsext_acquirer.acquirer_id', 'ILIKE', '%' . $request->acquirerId . '%');
                 }
 
                 if($request->name != '')
                 {
-                    $query->where('name', 'ILIKE', '%' . $request->name . '%');
+                    $query->where('tmsext_acquirer.name', 'ILIKE', '%' . $request->name . '%');
                 }
 
                 if($request->onUs != '')
@@ -43,7 +45,7 @@ class IssuerController extends Controller
                 $count = $query->get()->count();
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
-                ->limit($pageSize)->orderBy('name', 'ASC')->get();
+                ->limit($pageSize)->orderBy('tmsext_issuer.name', 'ASC')->get();
                 if( $count  > 0)
                 {
                 $a=['responseCode' => '0000', 
@@ -110,6 +112,21 @@ class IssuerController extends Controller
                     "responseDesc"=>"OK",
                     "generatedId" =>  $ta->id
                     ];    
+                //add to card link issuer
+                $iD =  $ta->id;  
+                if($request->cards)
+                {
+                    foreach($request->cards as $card)
+                    {
+                         DB::table('tmsext_issuer_card_link')->insert(
+                            ['issuer_id' => $iD, 'card_id' => $card]
+                        );
+                    }    
+                   
+                }    
+
+                
+
             return $this->headerResponse($a,$request);
             }
            
@@ -187,11 +204,27 @@ class IssuerController extends Controller
             $this->updateAction($request, $ta);
             
             if ($ta->save()) {
-                DB::commit();
+                
+                $iD =  $request->id;  
+                if($request->cards)
+                {
+                    DB::table('tmsext_issuer_card_link')->where('issuer_id', $iD)->delete();
+                    $s =array();
+                    foreach($request->cards as $card)
+                    {
+                         
+                           $s[] = ['issuer_id' => $iD, 'card_id' => $card];
+                        
+                    }    
+                    DB::table('tmsext_issuer_card_link')->insert($s);
+                   
+                }        
                 $a  =   [   
                     "responseCode"=>"0000",
                     "responseDesc"=>"OK"
-                    ];    
+                    ];  
+                DB::commit();    
+
             return $this->headerResponse($a,$request);
             }
             
@@ -238,12 +271,33 @@ class IssuerController extends Controller
                          $query->select('id', 'name','acquirer_type as type','description','host_id as hostId');
                         
                      }])
-            ->get()->makeHidden('acquirer_id');
+            ->get();//->makeHidden('acquirer_id');
             if($ta->count()>0)
             {
+                
+                 $tass = $ta->map(function ($item) {
+                    //
+                    $g = DB::table('tmsext_issuer_card_link')->where('issuer_id',$item->id)
+                    ->join('tmsext_card', 'tmsext_issuer_card_link.card_id', '=', 'tmsext_card.id')->get();
+                    $d = array();
+                    foreach($g as $c)
+                    {
+                        $d[]= array('id'=>$c->id,
+                                            'name'=>$c->name,
+                                            'binRangeStart'=>$c->bin_range_start,
+                                            'binRangeEnd'=>$c->bin_range_end,
+                                            'cardNumLength'=>$c->card_num_length,
+                                            'panDigitUnmasking'=>$c->pan_digit_unmasking
+                                        );
+                    }    
+                    $item['cards'] = $d;
+                    return $item;
+
+                    });
+
                 $a=["responseCode"=>"0000",
                     "responseDesc"=>"OK",
-                     "data" => $ta
+                     "data" => $tass
                     ];    
                 return $this->headerResponse($a,$request);
             }
@@ -286,6 +340,8 @@ class IssuerController extends Controller
                         "responseCode"=>"0000",
                         "responseDesc"=>"OK"
                         ];    
+                    //hard delete tmsext_issuer_card_link
+                    DB::table('tmsext_issuer_card_link')->where('issuer_id', $request->id)->delete();    
                     return $this->headerResponse($a,$request);
                  }
              }

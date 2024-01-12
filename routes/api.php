@@ -26,6 +26,7 @@ use App\http\Controllers\TerminalExtController;
 use App\http\Controllers\CardController;
 use App\http\Controllers\AcquirerController;
 use App\http\Controllers\IssuerController;
+use App\http\Controllers\ResponseCodeController;
 
 
 
@@ -242,6 +243,15 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->post('/template/delete', [TemplateController::class,'delete']);
         $router->get('/template/list', [TemplateController::class,'list']);
         $router->get('/template/get', [TemplateController::class,'show']);
+        $router->get('/template/listAcquirer', [TemplateController::class,'listAcquirer']);
+        
+
+         /* router response Code*/ 
+        $router->post('/responseCode/add', [ResponseCodeController::class,'add']);
+        $router->post('/responseCode/update', [ResponseCodeController::class,'update']);
+        $router->post('/responseCode/delete', [ResponseCodeController::class,'delete']);
+        $router->get('/responseCode/list', [ResponseCodeController::class,'list']);
+        $router->get('/responseCode/get', [ResponseCodeController::class,'show']);
         
     
     });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\Acquirer;
+use App\Models\Tlesetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
@@ -127,7 +128,8 @@ class AcquirerController extends Controller
             $ta->host_destination_port = $request->hostDestPort;
             $ta->tle_acquirer = $request->tleAcquirer;
             $ta->tle_setting_id = $request->tleSettingId;
-            $ta->master_key = $request->masterKeyLocation;
+            $ta->master_key_location = $request->masterKeyLocation;
+            $ta->master_key = $request->masterKey;
             $ta->working_key = $request->workingKey;
             $ta->batch_number = $request->batchNumber;
             $ta->mid = $request->merchantId;
@@ -251,6 +253,7 @@ class AcquirerController extends Controller
             $ta->host_destination_port = $request->hostDestPort;
             $ta->tle_acquirer = $request->tleAcquirer;
             $ta->tle_setting_id = $request->tleSettingId;
+            $ta->master_key_location = $request->masterKeyLocation;
             $ta->master_key = $request->masterKeyLocation;
             $ta->working_key = $request->workingKey;
             $ta->batch_number = $request->batchNumber;
@@ -312,9 +315,9 @@ class AcquirerController extends Controller
                     'host_destination_addr as hostDestAddr',
                     'host_destination_port as hostDestPort',
                     'tle_acquirer as tleAcquirer',
-                    'master_key_location as master_key_location',
-                    'master_key as master_key',
-                    'working_key as working_key',
+                    'master_key_location as masterKeyLocation',
+                    'master_key as masterKey',
+                    'working_key as workingKey',
                     'batch_number as batchNumber',
                     'mid as merchantId',
                     'tid as terminalId',
@@ -322,33 +325,44 @@ class AcquirerController extends Controller
                     'check_card_exp_date as checkCardExpDate',
                     'credit_settlement as creditSettlement',
                     'debit_settlement as debitSettlement',
+                    'tle_setting_id as tle_setting_id', 
                     'version',
                     'created_by as createdBy',
                     'create_ts as createdTime',
                     'updated_by as lastUpdatedBy',
                     'update_ts as lastUpdatedTime'
                     )
-
-            ->with(['tle_setting' => function ($query) {
-                         $query->select('id','tle_id as tleId','tle_eft_sec as tleEftSec','acquirer_id as acquirerId','ltmk_aid as ltmkAid','vendor_id as vendorId','tle_ver as tleVer');
-                        
-            }])
             ->where('id', 'ILIKE', '%' . $request->id . '%')
             ->whereNull('deleted_by')
-            ->get();
+            // ->with(['tle_setting' => function ($query) {
+            //              $query->select('id','tle_id as tleId','tle_eft_sec as tleEftSec','acquirer_id as acquirerId','ltmk_aid as ltmkAid','vendor_id as vendorId','tle_ver as tleVer');
+                        
+            // }])
+            ->get();//->makeHidden('tle_setting_id');
             if($ta->count()>0)
             {
                 
+               
+
                 $tas = $ta->map(function ($item) {
-                    $item['tleSetting'] = $item->tle_setting;
+                    //
+                    $g = Tlesetting::find($item->tle_setting_id);
+                    $item['tleSetting'] = array('id'=>$g->id,
+                                            'tleId'=>$g->tle_id,
+                                            'tleEftSec'=>$g->tle_eft_sec,
+                                            'acquirerId'=>$g->acquirer_id,
+                                            'ltmkAid'=>$g->ltmk_aid,
+                                            'vendorId'=>$g->vendor_id,
+                                            'tleVer'=>$g->tle_ver,
+                                        );
                     return $item;
                 });
 
-               unset($tas[0]['tle_setting']);
+                unset($tas[0]['tle_setting_id']);
 
                 $a=["responseCode"=>"0000",
                     "responseDesc"=>"OK",
-                     "data" => $tas
+                     "data" => $ta
                     ];    
                 return $this->headerResponse($a,$request);
             }

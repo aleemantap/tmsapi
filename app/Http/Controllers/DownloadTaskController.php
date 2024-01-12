@@ -121,9 +121,9 @@ class DownloadTaskController extends Controller
             $pageNum = ($request->pageNum)?$request->pageNum:1;
 
                 $query = DownloadTask::select(
-                    'tms_download_task.id',
+                    'tms_download_task.id as dtId',
                     'tms_terminal.model_id as id',
-                    'tms_terminal.sn',
+                    'tms_terminal.sn'
                 )
                 ->where('tms_download_task.id',$request->id)->whereNull('tms_download_task.deleted_by')
                 ->join('tms_download_task_terminal_link', 'tms_download_task.id', '=', 'tms_download_task_terminal_link.download_task_id')

@@ -18,31 +18,72 @@ class TemplateController extends Controller
                 $pageSize = ($request->pageSize)?$request->pageSize:10;
                 $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $query = 
-                Acquirer:: 
-                select('id','name','version','acquirer_type as type','description','host_id as hostId','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
+                Template:: 
+                select('id','name','version','description','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime')
                 ->whereNull('deleted_by');                
                 
                 
-                if($request->terminalExtId != '')
-                {
-                    $query->where('terminal_id', 'ILIKE', '%' . $request->terminalExtId . '%');
-                }
-
                 if($request->name != '')
                 {
                     $query->where('name', 'ILIKE', '%' . $request->name . '%');
                 }
 
-                if($request->type != '')
+                $count = $query->get()->count();
+            
+                $results = $query->offset(($pageNum-1) * $pageSize) 
+                ->limit($pageSize)->orderBy('create_ts', 'DESC')->get();
+                if( $count  > 0)
                 {
-                    $query->where('acquirer_type', 'ILIKE', '%' . $request->type . '%');
+                $a=['responseCode' => '0000', 
+                'responseDesc' => "OK",
+                'pageSize'  =>  $pageSize,
+                'totalPage' => ceil($count/$pageSize),
+                'total' => $count,
+                'rows' => $results
+                    ];    
+                return $this->listResponse($a,$request);
+                }else{
+                    $a=["responseCode"=>"0400",
+                    "responseDesc"=>"Data Not Found",
+                    'rows' => null
+                    ];    
+                return $this->headerResponse($a,$request);
                 }
 
+        } catch (\Exception $e) {
+            $a=["responseCode"=>"3333",
+                    "responseDesc"=>$e->getMessage()
+                    ];    
+                return $this->headerResponse($a,$request);
+        }
+    }
+
+    public function listAcquirer(Request $request){
+
+        try {
+
+                $pageSize = ($request->pageSize)?$request->pageSize:10;
+                $pageNum = ($request->pageNum)?$request->pageNum:1;
+                $query = 
+                DB::table('tmsext_template_acquirer_link') 
+                ->join('tmsext_template_acquirer_link', 'tmsext_template_acquirer_link.acquired_id', '=', 'tmsext_acquirer.id')
+                ->select('tmsext_acquirer.id as id','tmsext_acquirer.name as name','tmsext_acquirer.version','tmsext_acquirer.type','tmsext_acquirer.description','tmsext_acquirer.host_id as hostId','created_by as createdBy','create_ts as createdTime', 'updated_by as lastUpdatedBy','update_ts as lastUpdatedTime');              
+                
+                
+                if($request->name != '')
+                {
+                    $query->where('tmsext_acquirer.name', 'ILIKE', '%' . $request->name . '%');
+                }
+
+                if($request->type != '')
+                {
+                    $query->where('tmsext_acquirer.type', 'ILIKE', '%' . $request->type . '%');
+                }
 
                 $count = $query->get()->count();
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
-                ->limit($pageSize)->orderBy('name', 'ASC')->get();
+                ->limit($pageSize)->orderBy('tmsext_acquirer.create_ts', 'DESC')->get();
                 if( $count  > 0)
                 {
                 $a=['responseCode' => '0000', 
@@ -75,30 +116,35 @@ class TemplateController extends Controller
         $ruleBool = [Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])];
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:100',
-            'type' => 'required|max:50',
-            'description' => 'max:255',
-            'hostId' => 'max:3', 
-            'settlementHostId' => 'max:3',
-            'numberOfPrint' => 'numeric',
-            'respTimeout' => 'numeric',
-            'acquirerId' => 'max:2',
-            'hostDestAddr' => 'max:100',
-            'hostDestPort' => 'max:6',
-            'tleAcquirer' => $ruleBool,
-            'tleSettingId' =>  'required_if:tleAcquirer,1,True,TRUE,true',
-            'masterKeyLocation' => 'max:4',
-            //masterKey
-            //workingKey
-            'batchNumber' => 'max:6',
-            'merchantId' => 'max:15',
-            'terminalId' => 'max:8',
-            'showPrintExpDate' => $ruleBool,
-            'checkCardExpDate' => $ruleBool,
-            'creditSettlement' => $ruleBool,
-            'debitSettlement' => $ruleBool
-            //terminalExtId
-
-            
+            'hostReport' => $ruleBool,
+            'hostReportUrl' => 'required_if:hostReport,1,True,TRUE,true',
+            'hostReportApiKey' => 'required_if:hostReport,1,True,TRUE,true',
+            'hostReportTimeout' => 'required_if:hostReport,1,True,TRUE,true',
+            'hostLogging' => $ruleBool,
+            'hostLoggingUrl'  => 'required_if:hostLogging,1,True,TRUE,true',
+            'hostLoggingApiKey'  => 'required_if:hostLogging,1,True,TRUE,true',
+            'hostLoggingInterval' => 'required_if:hostLogging,1,True,TRUE,true',
+            'hostLoggingTimeout' => 'required_if:hostLogging,1,True,TRUE,true',
+            'featureSale' => $ruleBool,
+            'featureSaleTip' => $ruleBool,
+            'featureSaleRedemption' => $ruleBool,
+            'featureSaleCompletion' => $ruleBool,
+            'featureSaleFareNonFare' => $ruleBool,
+            'featureCardVer'  => $ruleBool,
+            'featureInstallment' => $ruleBool,
+            'featureManualKeyIn' => $ruleBool,
+            'featureQris' => $ruleBool,
+            'featureContactless' => $ruleBool,
+            'fallbackEnabled' => $ruleBool,
+            'randomPinKeypad'  => $ruleBool,
+            'beepPinKeypad' => $ruleBool,
+            'nextLogon'  => 'numeric',
+            'autoLogon' => $ruleBool,
+            'pushLogon' => $ruleBool,
+            'qrisCountDown' => 'numeric',
+            'reprintOnlineRetry' => 'numeric',
+            'settlementWarningTrxCount'  => 'numeric',
+            'settlementMaxTrxCount'  => 'numeric',
         ]);
  
         if ($validator->fails()) {
@@ -113,41 +159,76 @@ class TemplateController extends Controller
  
         try {
 
-            $ta = new Acquirer();
+            $ta = new Template();
             $ta->version = 1; 
-            $ta->name = $request->name;
-            $ta->acquirer_type = $request->type;
-            $ta->description = $request->description;
-            $ta->host_id = $request->hostId; 
-            $ta->settlement_host_id = $request->settlementHostId;
-            $ta->number_of_print = $request->numberOfPrint;
-            $ta->resp_timeout = $request->respTimeout;
-            $ta->acquirer_id = $request->acquirerId;
-            $ta->host_destination_addr = $request->hostDestAddr;
-            $ta->host_destination_port = $request->hostDestPort;
-            $ta->tle_acquirer = $request->tleAcquirer;
-            $ta->tle_setting_id = $request->tleSettingId;
-            $ta->master_key = $request->masterKeyLocation;
-            $ta->working_key = $request->workingKey;
-            $ta->batch_number = $request->batchNumber;
-            $ta->mid = $request->merchantId;
-            $ta->tid = $request->terminalId;
-            $ta->show_print_exp_date = $request->showPrintExpDate;
-            $ta->check_card_exp_date = $request->checkCardExpDate;
-            $ta->credit_settlement = $request->creditSettlement;
-            $ta->debit_settlement = $request->debitSettlement;
-            $ta->terminal_id = $request->terminalExtId;
-
+            $ta->name = $request->name; 
+            $ta->description = $request->description; 
+            $ta->host_report = $request->hostReport; 
+            $ta->host_report_url = $request->hostReportUrl;
+            $ta->host_report_api_key = $request->hostReportApiKey;
+            $ta->host_report_timeout = $request->hostReportTimeout;
+            $ta->host_logging = $request->hostLogging;
+            $ta->host_logging_url = $request->hostLoggingUrl;
+            $ta->host_logging_api_key = $request->hostLoggingApiKey;
+            $ta->host_logging_interval = $request->hostLoggingInterval;
+            $ta->host_logging_timeout = $request->hostLoggingTimeout;
+            $ta->feature_sale = $request->featureSale;
+            $ta->feature_sale_tip = $request->featureSaleTip;
+            $ta->feature_sale_redemption = $request->featureSaleRedemption;
+            $ta->feature_sale_completion = $request->featureSaleCompletion;
+            $ta->feature_sale_fare_non_fare = $request->featureSaleFareNonFare;
+            $ta->feature_card_verification = $request->featureCardVer;
+            $ta->feature_installment = $request->featureInstallment;
+            $ta->feature_manual_key_in = $request->featureManualKeyIn;
+            $ta->feature_qris = $request->featureQris;
+            $ta->feature_contactless = $request->featureContactless;
+            $ta->fallback_enabled = $request->fallbackEnabled;
+            $ta->random_pin_keypad = $request->randomPinKeypad;
+            $ta->beep_pin_keypad = $request->beepPinKeypad;
+            $ta->next_logon = $request->nextLogon;
+            $ta->auto_logon = $request->autoLogon;
+            $ta->push_logon = $request->pushLogon;
+            $ta->qris_count_down = $request->qrisCountDown;
+            $ta->reprint_online_retry = $request->reprintOnlineRetry;
+            $ta->settle_warning_trx_count = $request->settlementWarningTrxCount;
+            $ta->settle_max_trx_count = $request->settlementMaxTrxCount;
+            $ta->call_center1 = $request->callCenter1;
+            $ta->call_center2 = $request->callCenter2;
+            $ta->merchant_password = $request->merchantPassword;
+            $ta->admin_password = $request->adminPassword;
+            $ta->settlement_password = $request->settlementPassword;
+            $ta->void_password = $request->voidPassword;
+            $ta->brizzi_discount_percentage = $request->brizziDiscountPercentage;
+            $ta->brizzi_discount_amount = $request->brizziDiscountAmount;
+            $ta->installment1_options = $request->installment1Options;
+            $ta->installment2_options = $request->installment2Options;
+            $ta->installment3_options = $request->installment3Options;
+            
             $this->saveAction($request, $ta);
 
             if ($ta->save()) {
+
+                $iD =  $ta->id;  
+                if($request->acquirerIds)
+                {
+                    foreach($request->acquirerIds as $c)
+                    {
+                         DB::table('tmsext_template_acquirer_link')->insert(
+                            ['template_id' => $iD, 'acquirer_id' => $c]
+                        );
+                    }    
+                   
+                }  
+
                 DB::commit();
                 $a  =   [   
                     "responseCode"=>"0000",
                     "responseDesc"=>"OK",
                     "generatedId" =>  $ta->id
                     ];    
-            return $this->headerResponse($a,$request);
+                
+               
+                return $this->headerResponse($a,$request);
             }
            
         } catch (\Exception $e) {
@@ -166,46 +247,51 @@ class TemplateController extends Controller
         $ruleBool = [Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])];
       
 
-        $check = Acquirer::where([
+        $check = Template::where([
             ['id',$request->id],
             ['version',$request->version],
-            ['name',$request->name],
-            ['acquirer_type',$request->type]
             
         ])->get();
 
         
         $appa = [
-            // /'type' => 'required|max:50',
-            'description' => 'max:255',
-            'hostId' => 'max:3', 
-            'settlementHostId' => 'max:3',
-            'numberOfPrint' => 'numeric',
-            'respTimeout' => 'numeric',
-            'acquirerId' => 'max:2',
-            'hostDestAddr' => 'max:100',
-            'hostDestPort' => 'max:6',
-            'tleAcquirer' => $ruleBool,
-            'tleSettingId' =>  'required_if:tleAcquirer,1,True,TRUE,true',
-            'masterKeyLocation' => 'max:4',
-            //masterKey
-            //workingKey
-            'batchNumber' => 'max:6',
-            'merchantId' => 'max:15',
-            'terminalId' => 'max:8',
-            'showPrintExpDate' => $ruleBool,
-            'checkCardExpDate' => $ruleBool,
-            'creditSettlement' => $ruleBool,
-            'debitSettlement' => $ruleBool,
-            //terminalExtId
-
+            'name' => 'required|max:100',
+            'hostReport' => $ruleBool,
+            'hostReportUrl' => 'required_if:hostReport,1,True,TRUE,true',
+            'hostReportApiKey' => 'required_if:hostReport,1,True,TRUE,true',
+            'hostReportTimeout' => 'required_if:hostReport,1,True,TRUE,true',
+            'hostLogging' => $ruleBool,
+            'hostLoggingUrl'  => 'required_if:hostLogging,1,True,TRUE,true',
+            'hostLoggingApiKey'  => 'required_if:hostLogging,1,True,TRUE,true',
+            'hostLoggingInterval' => 'required_if:hostLogging,1,True,TRUE,true',
+            'hostLoggingTimeout' => 'required_if:hostLogging,1,True,TRUE,true',
+            'featureSale' => $ruleBool,
+            'featureSaleTip' => $ruleBool,
+            'featureSaleRedemption' => $ruleBool,
+            'featureSaleCompletion' => $ruleBool,
+            'featureSaleFareNonFare' => $ruleBool,
+            'featureCardVer'  => $ruleBool,
+            'featureInstallment' => $ruleBool,
+            'featureManualKeyIn' => $ruleBool,
+            'featureQris' => $ruleBool,
+            'featureContactless' => $ruleBool,
+            'fallbackEnabled' => $ruleBool,
+            'randomPinKeypad'  => $ruleBool,
+            'beepPinKeypad' => $ruleBool,
+            'nextLogon'  => 'numeric',
+            'autoLogon' => $ruleBool,
+            'pushLogon' => $ruleBool,
+            'qrisCountDown' => 'numeric',
+            'reprintOnlineRetry' => 'numeric',
+            'settlementWarningTrxCount'  => 'numeric',
+            'settlementMaxTrxCount'  => 'numeric',
           
         ];
         
         if($check->count() == 0){
      
             $appa['name'] = 'required|max:100';
-            $appa['type'] = 'required|max:50';
+           
            
         }
         $validator = Validator::make($request->all(),$appa);
@@ -222,10 +308,10 @@ class TemplateController extends Controller
 
         try {
 
-            $ta = Acquirer::where([
+            $ta = Template::where([
                 ['id',$request->id],
-                ['version',$request->version],
-                ['acquirer_type',$request->type]
+                ['version',$request->version]
+              
                 
             ])
             ->whereNull('deleted_by')
@@ -239,33 +325,68 @@ class TemplateController extends Controller
             }
             
             $ta->version = $request->version + 1;
-            $ta->name = $request->name;
-            $ta->acquirer_type = $request->type;
-            $ta->description = $request->description;
-            $ta->host_id = $request->hostId; 
-            $ta->settlement_host_id = $request->settlementHostId;
-            $ta->number_of_print = $request->numberOfPrint;
-            $ta->resp_timeout = $request->respTimeout;
-            $ta->acquirer_id = $request->acquirerId;
-            $ta->host_destination_addr = $request->hostDestAddr;
-            $ta->host_destination_port = $request->hostDestPort;
-            $ta->tle_acquirer = $request->tleAcquirer;
-            $ta->tle_setting_id = $request->tleSettingId;
-            $ta->master_key = $request->masterKeyLocation;
-            $ta->working_key = $request->workingKey;
-            $ta->batch_number = $request->batchNumber;
-            $ta->mid = $request->merchantId;
-            $ta->tid = $request->terminalId;
-            $ta->show_print_exp_date = $request->showPrintExpDate;
-            $ta->check_card_exp_date = $request->checkCardExpDate;
-            $ta->credit_settlement = $request->creditSettlement;
-            $ta->debit_settlement = $request->debitSettlement;
-            $ta->terminal_id = $request->terminalExtId;
-
+            $ta->name = $request->name; 
+            $ta->description = $request->description; 
+            $ta->host_report = $request->hostReport; 
+            $ta->host_report_url = $request->hostReportUrl;
+            $ta->host_report_api_key = $request->hostReportApiKey;
+            $ta->host_report_timeout = $request->hostReportTimeout;
+            $ta->host_logging = $request->hostLogging;
+            $ta->host_logging_url = $request->hostLoggingUrl;
+            $ta->host_logging_api_key = $request->hostLoggingApiKey;
+            $ta->host_logging_interval = $request->hostLoggingInterval;
+            $ta->host_logging_timeout = $request->hostLoggingTimeout;
+            $ta->feature_sale = $request->featureSale;
+            $ta->feature_sale_tip = $request->featureSaleTip;
+            $ta->feature_sale_redemption = $request->featureSaleRedemption;
+            $ta->feature_sale_completion = $request->featureSaleCompletion;
+            $ta->feature_sale_fare_non_fare = $request->featureSaleFareNonFare;
+            $ta->feature_card_verification = $request->featureCardVer;
+            $ta->feature_installment = $request->featureInstallment;
+            $ta->feature_manual_key_in = $request->featureManualKeyIn;
+            $ta->feature_qris = $request->featureQris;
+            $ta->feature_contactless = $request->featureContactless;
+            $ta->fallback_enabled = $request->fallbackEnabled;
+            $ta->random_pin_keypad = $request->randomPinKeypad;
+            $ta->beep_pin_keypad = $request->beepPinKeypad;
+            $ta->next_logon = $request->nextLogon;
+            $ta->auto_logon = $request->autoLogon;
+            $ta->push_logon = $request->pushLogon;
+            $ta->qris_count_down = $request->qrisCountDown;
+            $ta->reprint_online_retry = $request->reprintOnlineRetry;
+            $ta->settle_warning_trx_count = $request->settlementWarningTrxCount;
+            $ta->settle_max_trx_count = $request->settlementMaxTrxCount;
+            $ta->call_center1 = $request->callCenter1;
+            $ta->call_center2 = $request->callCenter2;
+            $ta->merchant_password = $request->merchantPassword;
+            $ta->admin_password = $request->adminPassword;
+            $ta->settlement_password = $request->settlementPassword;
+            $ta->void_password = $request->voidPassword;
+            $ta->brizzi_discount_percentage = $request->brizziDiscountPercentage;
+            $ta->brizzi_discount_amount = $request->brizziDiscountAmount;
+            $ta->installment1_options = $request->installment1Options;
+            $ta->installment2_options = $request->installment2Options;
+            $ta->installment3_options = $request->installment3Options;
 
             $this->updateAction($request, $ta);
             
             if ($ta->save()) {
+                $iD =  $request->id;  
+                if($request->acquirerIds)
+                {
+                    DB::table('tmsext_template_acquirer_link')->where('template_id', $iD)->delete();
+                    $s =array();
+                    foreach($request->acquirerIds as $c)
+                    {
+                         
+                           $s[] = ['template_id' => $iD, 'acquirer_id' => $c];
+                        
+                    }    
+                    DB::table('tmsext_template_acquirer_link')->insert($s);
+                   
+                }  
+
+
                 DB::commit();
                 $a  =   [   
                     "responseCode"=>"0000",
@@ -299,29 +420,49 @@ class TemplateController extends Controller
         }
      
         try {
-            $ta = Acquirer::select(
+            $ta = Template::select(
                     'id',
                     'name',
-                    'acquirer_type as type',
                     'description',
-                    'host_id as hostId',
-                    'settlement_host_id as settlementHostId',
-                    'number_of_print as numberOfPrint',
-                    'resp_timeout as respTimeout',
-                    'acquirer_id as acquirerId',
-                    'host_destination_addr as hostDestAddr',
-                    'host_destination_port as hostDestPort',
-                    'tle_acquirer as tleAcquirer',
-                    'master_key_location as master_key_location',
-                    'master_key as master_key',
-                    'working_key as working_key',
-                    'batch_number as batchNumber',
-                    'mid as merchantId',
-                    'tid as terminalId',
-                    'show_print_exp_date as showPrintExpDate',
-                    'check_card_exp_date as checkCardExpDate',
-                    'credit_settlement as creditSettlement',
-                    'debit_settlement as debitSettlement',
+                    'host_report as hostReport',
+                    'host_report_url as hostReportUrl',
+                    'host_report_api_key as hostReportApiKey',
+                    'host_report_timeout as hostReportTimeout',
+                    'host_logging as hostLogging', 
+                    'host_logging_url as hostLoggingUrl', 
+                    'host_logging_api_key as hostLoggingApiKey',
+                    'host_logging_interval as hostLoggingInterval',
+                    'host_logging_timeout as hostLoggingTimeout',
+                    'feature_sale as featureSale',
+                    'feature_sale_tip as featureSaleTip',
+                    'feature_sale_redemption as featureSaleRedemption',
+                    'feature_sale_completion as featureSaleCompletion',
+                    'feature_sale_fare_non_fare as featureSaleFareNonFare',
+                    'feature_card_verification as featureCardVer',
+                    'feature_installment as featureInstallment',
+                    'feature_manual_key_in as featureManualKeyIn',
+                    'feature_qris as featureQris',
+                    'feature_contactless as featureContactless',
+                    'fallback_enabled as fallbackEnabled',
+                    'random_pin_keypad as randomPinKeypad',
+                    'next_logon as nextLogon',
+                    'auto_logon as autoLogon',
+                    'push_logon as pushLogon',
+                    'qris_count_down as qrisCountDown',
+                    'reprint_online_retry as reprintOnlineRetry',
+                    'settle_warning_trx_count as settlementWarningTrxCount',
+                    'settle_max_trx_count as settlementMaxTrxCount',
+                    'call_center1 as callCenter1',
+                    'call_center2 as callCenter2',
+                    'merchant_password as merchantPassword',
+                    'admin_password as adminPassword',
+                    'settlement_password as settlementPassword',
+                    'void_password as voidPassword',
+                    'brizzi_discount_percentage as brizziDiscountPercentage',
+                    'brizzi_discount_amount as brizziDiscountAmount',
+                    'installment1_options as installment1Options',
+                    'installment2_options as installment2Options',
+                    'installment3_options as installment3Options'
                     'version',
                     'created_by as createdBy',
                     'create_ts as createdTime',
@@ -329,26 +470,15 @@ class TemplateController extends Controller
                     'update_ts as lastUpdatedTime'
                     )
 
-            ->with(['tle_setting' => function ($query) {
-                         $query->select('id','tle_id as tleId','tle_eft_sec as tleEftSec','acquirer_id as acquirerId','ltmk_aid as ltmkAid','vendor_id as vendorId','tle_ver as tleVer');
-                        
-            }])
             ->where('id', 'ILIKE', '%' . $request->id . '%')
             ->whereNull('deleted_by')
             ->get();
             if($ta->count()>0)
             {
-                
-                $tas = $ta->map(function ($item) {
-                    $item['tleSetting'] = $item->tle_setting;
-                    return $item;
-                });
-
-               unset($tas[0]['tle_setting']);
-
+               
                 $a=["responseCode"=>"0000",
                     "responseDesc"=>"OK",
-                     "data" => $tas
+                     "data" => $ta
                     ];    
                 return $this->headerResponse($a,$request);
             }
@@ -375,7 +505,7 @@ class TemplateController extends Controller
     public function delete(Request $request){
         DB::beginTransaction();
         try {
-            $m = Acquirer::where('id','=',$request->id)
+            $m = Template::where('id','=',$request->id)
             ->whereNull('deleted_by')
             ->where('version','=',$request->version);
             

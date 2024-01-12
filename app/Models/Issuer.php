@@ -23,11 +23,10 @@ class Issuer extends Model
 
     }
 
-
-	// public function acquirer()
- //    {
- //         return $this->belongsTo('App\Models\Acquirer', 'tle_setting_id', 'id');
- //    }
+	//public function card()
+    //{
+    //     return $this->belongsTo('App\Models\Acquirer', 'tle_setting_id', 'id');
+    //}
 
 
 

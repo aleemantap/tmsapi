@@ -43,6 +43,11 @@ class TerminalGroupController extends Controller
                 {
                     $query->where('tms_terminal_group.id', 'ILIKE', '%' . $request->id . '%');
                 }
+
+                if($request->name != '')
+                {
+                    $query->where('tms_terminal_group.name', 'ILIKE', '%' . $request->name . '%');
+                }
                  
                 if($request->sn != '')
                 {
