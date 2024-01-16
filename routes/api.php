@@ -27,6 +27,8 @@ use App\http\Controllers\CardController;
 use App\http\Controllers\AcquirerController;
 use App\http\Controllers\IssuerController;
 use App\http\Controllers\ResponseCodeController;
+use App\http\Controllers\TemplateController;
+
 
 
 

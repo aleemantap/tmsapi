@@ -20,61 +20,64 @@ class TerminalExtController extends Controller
                 $pageSize = ($request->pageSize)?$request->pageSize:10;
                 $pageNum = ($request->pageNum)?$request->pageNum:1;
                 $query = 
-                TerminalExt:: 
-                select('id',
-                        //'sn',
-                        'terminal_id as tid',
-                        'merchant_id as mid',
+                TerminalExt::query()
+                ->join('tmsext_template', 'tmsext_terminal_ext.templateId', '=', 'tmsext_template.id')
+                ->select('tmsext_terminal_ext.id as id',
+                        'tmsext_terminal_ext.terminal_id as tid',
+                        'tmsext_terminal_ext.merchant_id as mid',
                         'merchant_name1 as merchantName1',
                         'merchant_name2 as merchantName2',
                         'merchant_name3 as merchantName3',
-                        'call_center1 as callCenter1',
-                        'call_center2 as callCenter2',
-                        'version',
-                        'created_by as createdBy',
-                        'create_ts as createdTime',
-                        'updated_by as lastUpdatedBy',
-                        'update_ts as lastUpdatedTime')
-                ->whereNull('deleted_by'); 
-
+                        'tmsext_template.name as templateName',
+                        'tmsext_terminal_ext.version',
+                        'tmsext_terminal_ext.created_by as createdBy',
+                        'tmsext_terminal_ext.create_ts as createdTime',
+                        'tmsext_terminal_ext.updated_by as lastUpdatedBy',
+                        'tmsext_terminal_ext.update_ts as lastUpdatedTime')
+                ->whereNull('tmsext_terminal_ext.deleted_by');
+              
                 
                 if($request->merchantName != '')
                 {
                     //$query->where('tle_id', 'ILIKE', '%' . $request->merchantName . '%');
                     //$query->join('tmsext_terminal_ext.merchant_id','=','merchant.id');
-                    $rp = $request->merchantName;
-                    $query->whereHas('merchant', function($q) use ($rp) {
-                        $q->where('name', 'ILIKE', '%' . $rp . '%');
-                    });
+                    //$rp = $request->merchantName;
+                    //$query->whereHas('merchant', function($q) use ($rp) {
+                    //    $q->where('name', 'ILIKE', '%' . $rp . '%');
+                    //});
+                     $query->where('merchant_name1', 'ILIKE', '%' . $request->merchantName . '%');
+                     $query->where('merchant_name2', 'ILIKE', '%' . $request->merchantName . '%');
+                     $query->where('merchant_name3', 'ILIKE', '%' . $request->merchantName . '%');
                 }
-
-                /*
-                
-                if($request->terminalId != '')
-                {
-                    $query->where('terminal_id', 'ILIKE', '%' . $request->terminalId . '%');
-                }
-
                 if($request->tid != '')
                 {
-                    $query->where('tle_id', 'ILIKE', '%' . $request->tid . '%');
+                    $query->where('terminal_id', 'ILIKE', '%' . $request->tid . '%');
                 }
 
                 if($request->mid != '')
                 {
-                    $query->where('tle_id', 'ILIKE', '%' . $request->mid . '%');
+                    $query->where('merchant_id', 'ILIKE', '%' . $request->mid . '%');
                 }
 
+                if($request->templateName != '')
+                {
+                    $query->where('tmsext_template.name', 'ILIKE', '%' . $request->templateName . '%');
+                }
+                if($request->templateId != '')
+                {
+                    $query->where('templateId', 'ILIKE', '%' . $request->templateId . '%');
+                }
 
+                /*
                 if($request->sn != '')
                 {
-                    $query->where('tle_id', 'ILIKE', '%' . $request->sn . '%');
+                    $query->where('sn', 'ILIKE', '%' . $request->sn . '%');
                 }*/
 
                 $count = $query->get()->count();
             
                 $results = $query->offset(($pageNum-1) * $pageSize) 
-                ->limit($pageSize)->orderBy('create_ts', 'DESC')->get();
+                ->limit($pageSize)->orderBy('tmsext_terminal_ext.create_ts', 'DESC')->get();
                 if( $count  > 0)
                 {
                 $a=['responseCode' => '0000', 
@@ -104,46 +107,11 @@ class TerminalExtController extends Controller
 
     public function add(Request $request){
 
-        $ruleBool = [Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])];
-
         $validator = Validator::make($request->all(), [
             'tid' => 'required|max:8',
             'mid' => 'required|max:15',
             'merchantName1'  => 'required|max:30',
-            'merchantName2'  => 'max:30',
-            'merchantName3'   => 'max:30',
-            'merchantPassword' => 'max:8',
-            'adminPassword' => 'max:8',
-            'callCenter1' => 'max:255',
-            'callCenter2' => 'max:255',
-            'settlementMaxTrxCount' => 'numeric',
-            'settlementWarningTrxCount' => 'numeric',
-            'settlementPassword' => 'max:8',
-            'voidPassword' => 'max:8',
-            'brizziDiscountPercentage' => 'max:10',
-            'brizziDiscountAmount' => 'max:30',
-            'fallbackEnabled' =>  $ruleBool,
-            'featureSale'  =>  $ruleBool,
-            'featureInstallment'  =>  $ruleBool,
-            'featureCardVer'  =>  $ruleBool,
-            'featureSaleRedemption'  =>  $ruleBool,
-            'featureManualKeyIn'  =>  $ruleBool,
-            'featureSaleCompletion'  =>  $ruleBool,
-            'featureSaleTip'  =>  $ruleBool,
-            'featureSaleFareNonFare'  =>  $ruleBool,
-            'featureQris' =>  $ruleBool,
-            'featureContactless'  =>  $ruleBool,
-            'reprintOnlineRetry' =>'numeric',
-            'qrisCountDown' =>'numeric',
-            'randomPinKeypad' => $ruleBool,
-            'beepPinKeypad' => $ruleBool,
-            'nextLogon' => 'numeric',
-            'autoLogon' =>  $ruleBool,
-            'pushLogon' => 'numeric',
-            'hostReport' => $ruleBool,
-            'hostLogging' => $ruleBool,
-            'importDefault' => $ruleBool,
-            'settlementMaxTrxCount' => 'numeric'
+            'templateId' => 'required|max:36',
            
         ]);
  
@@ -164,40 +132,10 @@ class TerminalExtController extends Controller
             $c->terminal_id = $request->tid;
             $c->merchant_id = $request->mid;
             $c->merchant_name1  = $request->merchantName1;
-            $c->merchant_name2  = $request->merchantName3;
+            $c->merchant_name2  = $request->merchantName2;
             $c->merchant_name3  = $request->merchantName3;
-            $c->merchant_password  = $request->merchantPassword;
-            $c->admin_password  = $request->adminPassword;
-            $c->call_center1  = $request->callCenter1;
-            $c->call_center2  = $request->callCenter2;
-            $c->settle_max_trx_count  = $request->settlementMaxTrxCount;
-            $c->settle_warning_trx_count  = $request->settlementWarningTrxCount;
-            $c->settlement_password  = $request->settlementPassword;
-            $c->void_password  = $request->voidPassword;
-            $c->brizzi_discount_percentage  = $request->brizziDiscountPercentage;
-            $c->brizzi_discount_amount  = $request->brizziDiscountAmount;
-            $c->fallback_enabled  = $request->fallbackEnabled;
-            $c->feature_sale  =   $request->featureSale;
-            $c->feature_installment = $request->featureInstallment;
-            $c->feature_card_verification  =  $request->featureCardVer;
-            $c->feature_sale_redemption   = $request->featureSaleRedemption;
-            $c->feature_manual_key_in  =  $request->featureManualKeyIn; 
+            $c->templateId = $request->templateId;
             
-            $c->feature_sale_completion  =  $request->featureSaleCompletion;
-            $c->feature_sale_tip  =  $request->featureSaleTip;
-            $c->feature_sale_fare_non_fare  =  $request->featureSaleFareNonFare;
-            $c->feature_qris  =  $request->featureQris;
-            $c->feature_contactless  =  $request->featureContactless;
-            $c->reprint_online_retry = $request->reprintOnlineRetry;
-            $c->qris_count_down = $request->qrisCountDown;
-            $c->random_pin_keypad = $request->randomPinKeypad;
-            $c->beep_pin_keypad = $request->beepPinKeypad;
-            $c->next_logon = $request->nextLogon;
-            $c->auto_logon =  $request->autoLogon;
-            $c->push_logon = $request->pushLogon;
-            $c->host_report = $request->hostReport;
-            $c->host_logging = $request->hostLogging;
-            $c->import_default = $request->importDefault;
 
             $this->saveAction($request, $c);
 
@@ -229,45 +167,11 @@ class TerminalExtController extends Controller
            
         ])->get();
 
-        $ruleBool = [Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])];
         $appa = [
             'tid' => 'required|max:8',
             'mid' => 'required|max:15',
             'merchantName1'  => 'required|max:30',
-            'merchantName2'  => 'max:30',
-            'merchantName3'   => 'max:30',
-            'merchantPassword' => 'max:8',
-            'adminPassword' => 'max:8',
-            'callCenter1' => 'max:255',
-            'callCenter2' => 'max:255',
-            'settlementMaxTrxCount' => 'numeric',
-            'settlementWarningTrxCount' => 'numeric',
-            'settlementPassword' => 'max:8',
-            'voidPassword' => 'max:8',
-            'brizziDiscountPercentage' => 'max:10',
-            'brizziDiscountAmount' => 'max:30',
-            'fallbackEnabled' =>  $ruleBool,
-            'featureSale'  =>  $ruleBool,
-            'featureInstallment'  =>  $ruleBool,
-            'featureCardVer'  =>  $ruleBool,
-            'featureSaleRedemption'  =>  $ruleBool,
-            'featureManualKeyIn'  =>  $ruleBool,
-            'featureSaleCompletion'  =>  $ruleBool,
-            'featureSaleTip'  =>  $ruleBool,
-            'featureSaleFareNonFare'  =>  $ruleBool,
-            'featureQris' =>  $ruleBool,
-            'featureContactless'  =>  $ruleBool,
-            'reprintOnlineRetry' =>'numeric',
-            'qrisCountDown' =>'numeric',
-            'randomPinKeypad' => $ruleBool,
-            'beepPinKeypad' => $ruleBool,
-            'nextLogon' => 'numeric',
-            'autoLogon' =>  $ruleBool,
-            'pushLogon' => 'numeric',
-            'hostReport' => $ruleBool,
-            'hostLogging' => $ruleBool,
-            'importDefault' => $ruleBool,
-            'settlementMaxTrxCount' => 'numeric'
+            'templateId' => 'required|max:36',
           
         ];
         
@@ -307,46 +211,12 @@ class TerminalExtController extends Controller
             }
             
             $c->version = $request->version + 1;
-             $c->terminal_id = $request->tid;
+            $c->terminal_id = $request->tid;
             $c->merchant_id = $request->mid;
             $c->merchant_name1  = $request->merchantName1;
-            $c->merchant_name2  = $request->merchantName3;
+            $c->merchant_name2  = $request->merchantName2;
             $c->merchant_name3  = $request->merchantName3;
-            $c->merchant_password  = $request->merchantPassword;
-            $c->admin_password  = $request->adminPassword;
-            $c->call_center1  = $request->callCenter1;
-            $c->call_center2  = $request->callCenter2;
-            $c->settle_max_trx_count  = $request->settlementMaxTrxCount;
-            $c->settle_warning_trx_count  = $request->settlementWarningTrxCount;
-            $c->settlement_password  = $request->settlementPassword;
-            $c->void_password  = $request->voidPassword;
-            $c->brizzi_discount_percentage  = $request->brizziDiscountPercentage;
-            $c->brizzi_discount_amount  = $request->brizziDiscountAmount;
-            $c->fallback_enabled  = $request->fallbackEnabled;
-            $c->feature_sale  =   $request->featureSale;
-            $c->feature_installment = $request->featureInstallment;
-            $c->feature_card_verification  =  $request->featureCardVer;
-            $c->feature_sale_redemption   = $request->featureSaleRedemption;
-            $c->feature_manual_key_in  =  $request->featureManualKeyIn; 
-            
-            $c->feature_sale_completion  =  $request->featureSaleCompletion;
-            $c->feature_sale_tip  =  $request->featureSaleTip;
-            $c->feature_sale_fare_non_fare  =  $request->featureSaleFareNonFare;
-            $c->feature_qris  =  $request->featureQris;
-            $c->feature_contactless  =  $request->featureContactless;
-            $c->reprint_online_retry = $request->reprintOnlineRetry;
-            $c->qris_count_down = $request->qrisCountDown;
-            $c->random_pin_keypad = $request->randomPinKeypad;
-            $c->beep_pin_keypad = $request->beepPinKeypad;
-            $c->next_logon = $request->nextLogon;
-            $c->auto_logon =  $request->autoLogon;
-            $c->push_logon = $request->pushLogon;
-            $c->host_report = $request->hostReport;
-            $c->host_logging = $request->hostLogging;
-            $c->import_default = $request->importDefault;
-            
-            
-          
+            $c->templateId = $request->templateId;
             $this->updateAction($request, $c);
             
             if ($c->save()) {
@@ -369,7 +239,7 @@ class TerminalExtController extends Controller
         }
     }
     
-    public function show(Request $request){ //? belum
+    public function get(Request $request){ //? belum
         $validator = Validator::make($request->all(), [
             'id' => 'required|max:36'
         ]);
@@ -384,32 +254,14 @@ class TerminalExtController extends Controller
         
 
         try {
-            $p = Tlesetting::select(
+            $p = TerminalExt::select(
                     'id',
-                    'tle_id as tleId',
-                    'tle_eft_sec as tleEftSec',
-                    'acquirer_id as acquirerId',
-                    'ltmk_aid as ltmkAid',
-                    'vendor_id as vendorId',
-                    'tle_ver as tleVer',
-                    'kms_secure_nii as kmsSecureNii',
-                    'edc_secure_nii  as edcSecureNii',
-                    'capk_exponent  as capkExponent',
-                    'capk_length  as capkLength',
-                    'capk_value  as capkValue',
-                    'aid_length  as aidLength',
-                    'aid_value   as aidValue',
-                    'field_encrypted1  as encryptedField1',
-                    'field_encrypted2  as encryptedField2',
-                    'field_encrypted3  as encryptedField3',
-                    'field_encrypted4  as encryptedField4',
-                    'field_encrypted5  as encryptedField5',
-                    'field_encrypted6  as encryptedField6',
-                    'field_encrypted7  as encryptedField7',
-                    'field_encrypted8  as encryptedField8',
-                    'field_encrypted9  as encryptedField9',
-                    'field_encrypted10  as encryptedField10',
-                    'field_encrypted11  as encryptedField11',
+                    'terminal_id as tid',
+                    'merchant_id as mid',
+                    'merchant_name1 as merchantName1',
+                    'merchant_name2 as merchantName2',
+                    'merchant_name3 as merchantName3',
+                    'templateId',
                     'version',
                     'created_by as createdBy',
                     'create_ts as createdTime',
@@ -421,9 +273,29 @@ class TerminalExtController extends Controller
             ->get();
             if($p->count()>0)
             {
+                
+
+                 $tass = $p->map(function ($item) {
+                    //
+                    $g = DB::table('tmsext_template')->where('id',$item->templateId)->get();
+                   
+                    $d = null;
+                    foreach($g as $c)
+                    {
+                        $d= array('id'=>$c->id,
+                                            'name'=>$c->name,
+                                            'description'=>$c->description
+                                        );
+                    }    
+                    $item['template'] = $d;
+                    return $item;
+
+                    });
+                    unset($tass[0]['templateId']);
+
                 $a=["responseCode"=>"0000",
                     "responseDesc"=>"OK",
-                     "data" => $p
+                     "data" => $tass
                     ];    
                 return $this->headerResponse($a,$request);
             }
@@ -454,8 +326,8 @@ class TerminalExtController extends Controller
         try {
             $m = TerminalExt::where('id','=',$request->id)
             ->whereNull('deleted_by')
-            ->where('version','=',$request->version)
-            ->where('tenant_id',$request->header('Tenant-id'));
+            ->where('version','=',$request->version);
+            //->where('tenant_id',$request->header('Tenant-id'));
              $cn = $m->get()->count();
              if( $cn > 0)
              {

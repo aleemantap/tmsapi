@@ -103,5 +103,22 @@ class Controller extends BaseController
         
     }
 
+    /* convertStringInputBoolToNumberOneNol */
+    public function convertToBool($bool)
+    {
+        $data = array('true', 'TRUE','True','1');
+ 
+        if (in_array($bool, $data))
+        {
+        
+           return 1;
+        }
+        else
+        {
+        
+           return 0;
+        }
+    }
+
     
 }

@@ -13,21 +13,10 @@ class Template extends Model
 {
 	use HasFactory;
     use Uuid;
-    protected $table = "tmsext_acquirer";
+    protected $table = "tmsext_template";
 	public $timestamps = false;
 
 	
-
-	// public function tle_setting()
- //    {
- //        return $this->hasMany('App\Models\Tlesetting');
- //    }
-
- //    public function issuer()
- //    {
- //        //return $this->hasMany(Issuer::class);
- //        return $this->hasMany('App\Models\Issuer');
- //    }
 
 
 }

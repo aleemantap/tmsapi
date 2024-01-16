@@ -117,14 +117,14 @@ class TemplateController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|max:100',
             'hostReport' => $ruleBool,
-            'hostReportUrl' => 'required_if:hostReport,1,True,TRUE,true',
-            'hostReportApiKey' => 'required_if:hostReport,1,True,TRUE,true',
-            'hostReportTimeout' => 'required_if:hostReport,1,True,TRUE,true',
+            'hostReportUrl' => ['required_if:hostReport,1,True,TRUE,true'],
+            'hostReportApiKey' => ['required_if:hostReport,1,True,TRUE,true'],
+            'hostReportTimeout' => ['required_if:hostReport,1,True,TRUE,true'],
             'hostLogging' => $ruleBool,
-            'hostLoggingUrl'  => 'required_if:hostLogging,1,True,TRUE,true',
-            'hostLoggingApiKey'  => 'required_if:hostLogging,1,True,TRUE,true',
-            'hostLoggingInterval' => 'required_if:hostLogging,1,True,TRUE,true',
-            'hostLoggingTimeout' => 'required_if:hostLogging,1,True,TRUE,true',
+            'hostLoggingUrl'  => ['required_if:hostLogging,1,True,TRUE,true'],
+            'hostLoggingApiKey'  => ['required_if:hostLogging,1,True,TRUE,true'],
+            'hostLoggingInterval' => ['required_if:hostLogging,1,True,TRUE,true'],
+            'hostLoggingTimeout' => ['required_if:hostLogging,1,True,TRUE,true'],
             'featureSale' => $ruleBool,
             'featureSaleTip' => $ruleBool,
             'featureSaleRedemption' => $ruleBool,
@@ -138,13 +138,13 @@ class TemplateController extends Controller
             'fallbackEnabled' => $ruleBool,
             'randomPinKeypad'  => $ruleBool,
             'beepPinKeypad' => $ruleBool,
-            'nextLogon'  => 'numeric',
+            'nextLogon'  => 'nullable|numeric',
             'autoLogon' => $ruleBool,
             'pushLogon' => $ruleBool,
-            'qrisCountDown' => 'numeric',
-            'reprintOnlineRetry' => 'numeric',
-            'settlementWarningTrxCount'  => 'numeric',
-            'settlementMaxTrxCount'  => 'numeric',
+            'qrisCountDown' => 'nullable|numeric',
+            'reprintOnlineRetry' => 'nullable|numeric',
+            'settlementWarningTrxCount'  => 'nullable|numeric',
+            'settlementMaxTrxCount'  => 'nullable|numeric',
         ]);
  
         if ($validator->fails()) {
@@ -163,31 +163,31 @@ class TemplateController extends Controller
             $ta->version = 1; 
             $ta->name = $request->name; 
             $ta->description = $request->description; 
-            $ta->host_report = $request->hostReport; 
+            $ta->host_report = $this->convertToBool($request->hostReport); 
             $ta->host_report_url = $request->hostReportUrl;
             $ta->host_report_api_key = $request->hostReportApiKey;
             $ta->host_report_timeout = $request->hostReportTimeout;
-            $ta->host_logging = $request->hostLogging;
+            $ta->host_logging = $this->convertToBool($request->hostLogging);
             $ta->host_logging_url = $request->hostLoggingUrl;
             $ta->host_logging_api_key = $request->hostLoggingApiKey;
             $ta->host_logging_interval = $request->hostLoggingInterval;
             $ta->host_logging_timeout = $request->hostLoggingTimeout;
-            $ta->feature_sale = $request->featureSale;
-            $ta->feature_sale_tip = $request->featureSaleTip;
-            $ta->feature_sale_redemption = $request->featureSaleRedemption;
-            $ta->feature_sale_completion = $request->featureSaleCompletion;
-            $ta->feature_sale_fare_non_fare = $request->featureSaleFareNonFare;
-            $ta->feature_card_verification = $request->featureCardVer;
-            $ta->feature_installment = $request->featureInstallment;
-            $ta->feature_manual_key_in = $request->featureManualKeyIn;
-            $ta->feature_qris = $request->featureQris;
-            $ta->feature_contactless = $request->featureContactless;
-            $ta->fallback_enabled = $request->fallbackEnabled;
-            $ta->random_pin_keypad = $request->randomPinKeypad;
-            $ta->beep_pin_keypad = $request->beepPinKeypad;
+            $ta->feature_sale = $this->convertToBool($request->featureSale);
+            $ta->feature_sale_tip = $this->convertToBool($request->featureSaleTip);
+            $ta->feature_sale_redemption = $this->convertToBool($request->featureSaleRedemption);
+            $ta->feature_sale_completion = $this->convertToBool($request->featureSaleCompletion);
+            $ta->feature_sale_fare_non_fare = $this->convertToBool($request->featureSaleFareNonFare);
+            $ta->feature_card_verification = $this->convertToBool($request->featureCardVer);
+            $ta->feature_installment = $this->convertToBool($request->featureInstallment);
+            $ta->feature_manual_key_in = $this->convertToBool($request->featureManualKeyIn);
+            $ta->feature_qris = $this->convertToBool($request->featureQris);
+            $ta->feature_contactless = $this->convertToBool($request->featureContactless);
+            $ta->fallback_enabled = $this->convertToBool($request->fallbackEnabled);
+            $ta->random_pin_keypad = $this->convertToBool($request->randomPinKeypad);
+            $ta->beep_pin_keypad = $this->convertToBool($request->beepPinKeypad);
             $ta->next_logon = $request->nextLogon;
-            $ta->auto_logon = $request->autoLogon;
-            $ta->push_logon = $request->pushLogon;
+            $ta->auto_logon = $this->convertToBool($request->autoLogon);
+            $ta->push_logon = $this->convertToBool($request->pushLogon);
             $ta->qris_count_down = $request->qrisCountDown;
             $ta->reprint_online_retry = $request->reprintOnlineRetry;
             $ta->settle_warning_trx_count = $request->settlementWarningTrxCount;
@@ -245,8 +245,7 @@ class TemplateController extends Controller
     public function update(Request $request){
 
         $ruleBool = [Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])];
-      
-
+        
         $check = Template::where([
             ['id',$request->id],
             ['version',$request->version],
@@ -257,14 +256,14 @@ class TemplateController extends Controller
         $appa = [
             'name' => 'required|max:100',
             'hostReport' => $ruleBool,
-            'hostReportUrl' => 'required_if:hostReport,1,True,TRUE,true',
-            'hostReportApiKey' => 'required_if:hostReport,1,True,TRUE,true',
-            'hostReportTimeout' => 'required_if:hostReport,1,True,TRUE,true',
+            'hostReportUrl' => ['required_if:hostReport,1,True,TRUE,true'],
+            'hostReportApiKey' => ['required_if:hostReport,1,True,TRUE,true'],
+            'hostReportTimeout' => ['required_if:hostReport,1,True,TRUE,true'],
             'hostLogging' => $ruleBool,
-            'hostLoggingUrl'  => 'required_if:hostLogging,1,True,TRUE,true',
-            'hostLoggingApiKey'  => 'required_if:hostLogging,1,True,TRUE,true',
-            'hostLoggingInterval' => 'required_if:hostLogging,1,True,TRUE,true',
-            'hostLoggingTimeout' => 'required_if:hostLogging,1,True,TRUE,true',
+            'hostLoggingUrl'  => ['required_if:hostLogging,1,True,TRUE,true'],
+            'hostLoggingApiKey'  => ['required_if:hostLogging,1,True,TRUE,true'],
+            'hostLoggingInterval' => ['required_if:hostLogging,1,True,TRUE,true'],
+            'hostLoggingTimeout' => ['required_if:hostLogging,1,True,TRUE,true'],
             'featureSale' => $ruleBool,
             'featureSaleTip' => $ruleBool,
             'featureSaleRedemption' => $ruleBool,
@@ -278,13 +277,13 @@ class TemplateController extends Controller
             'fallbackEnabled' => $ruleBool,
             'randomPinKeypad'  => $ruleBool,
             'beepPinKeypad' => $ruleBool,
-            'nextLogon'  => 'numeric',
+            'nextLogon'  => 'nullable|numeric',
             'autoLogon' => $ruleBool,
             'pushLogon' => $ruleBool,
-            'qrisCountDown' => 'numeric',
-            'reprintOnlineRetry' => 'numeric',
-            'settlementWarningTrxCount'  => 'numeric',
-            'settlementMaxTrxCount'  => 'numeric',
+            'qrisCountDown' => 'nullable|numeric',
+            'reprintOnlineRetry' => 'nullable|numeric',
+            'settlementWarningTrxCount'  => 'nullable|numeric',
+            'settlementMaxTrxCount'  => 'nullable|numeric',
           
         ];
         
@@ -327,31 +326,31 @@ class TemplateController extends Controller
             $ta->version = $request->version + 1;
             $ta->name = $request->name; 
             $ta->description = $request->description; 
-            $ta->host_report = $request->hostReport; 
+            $ta->host_report = $this->convertToBool($request->hostReport); 
             $ta->host_report_url = $request->hostReportUrl;
             $ta->host_report_api_key = $request->hostReportApiKey;
             $ta->host_report_timeout = $request->hostReportTimeout;
-            $ta->host_logging = $request->hostLogging;
+            $ta->host_logging = $this->convertToBool($request->hostLogging);
             $ta->host_logging_url = $request->hostLoggingUrl;
             $ta->host_logging_api_key = $request->hostLoggingApiKey;
             $ta->host_logging_interval = $request->hostLoggingInterval;
             $ta->host_logging_timeout = $request->hostLoggingTimeout;
-            $ta->feature_sale = $request->featureSale;
-            $ta->feature_sale_tip = $request->featureSaleTip;
-            $ta->feature_sale_redemption = $request->featureSaleRedemption;
-            $ta->feature_sale_completion = $request->featureSaleCompletion;
-            $ta->feature_sale_fare_non_fare = $request->featureSaleFareNonFare;
-            $ta->feature_card_verification = $request->featureCardVer;
-            $ta->feature_installment = $request->featureInstallment;
-            $ta->feature_manual_key_in = $request->featureManualKeyIn;
-            $ta->feature_qris = $request->featureQris;
-            $ta->feature_contactless = $request->featureContactless;
-            $ta->fallback_enabled = $request->fallbackEnabled;
-            $ta->random_pin_keypad = $request->randomPinKeypad;
-            $ta->beep_pin_keypad = $request->beepPinKeypad;
+            $ta->feature_sale = $this->convertToBool($request->featureSale);
+            $ta->feature_sale_tip = $this->convertToBool($request->featureSaleTip);
+            $ta->feature_sale_redemption = $this->convertToBool($request->featureSaleRedemption);
+            $ta->feature_sale_completion = $this->convertToBool($request->featureSaleCompletion);
+            $ta->feature_sale_fare_non_fare = $this->convertToBool($request->featureSaleFareNonFare);
+            $ta->feature_card_verification = $this->convertToBool($request->featureCardVer);
+            $ta->feature_installment = $this->convertToBool($request->featureInstallment);
+            $ta->feature_manual_key_in = $this->convertToBool($request->featureManualKeyIn);
+            $ta->feature_qris = $this->convertToBool($request->featureQris);
+            $ta->feature_contactless = $this->convertToBool($request->featureContactless);
+            $ta->fallback_enabled = $this->convertToBool($request->fallbackEnabled);
+            $ta->random_pin_keypad = $this->convertToBool($request->randomPinKeypad);
+            $ta->beep_pin_keypad = $this->convertToBool($request->beepPinKeypad);
             $ta->next_logon = $request->nextLogon;
-            $ta->auto_logon = $request->autoLogon;
-            $ta->push_logon = $request->pushLogon;
+            $ta->auto_logon = $this->convertToBool($request->autoLogon);
+            $ta->push_logon = $this->convertToBool($request->pushLogon);
             $ta->qris_count_down = $request->qrisCountDown;
             $ta->reprint_online_retry = $request->reprintOnlineRetry;
             $ta->settle_warning_trx_count = $request->settlementWarningTrxCount;
@@ -427,7 +426,7 @@ class TemplateController extends Controller
                     'host_report as hostReport',
                     'host_report_url as hostReportUrl',
                     'host_report_api_key as hostReportApiKey',
-                    'host_report_timeout as hostReportTimeout',
+                    'host_report_timeout as hostReportTimeout', 
                     'host_logging as hostLogging', 
                     'host_logging_url as hostLoggingUrl', 
                     'host_logging_api_key as hostLoggingApiKey',
@@ -445,9 +444,10 @@ class TemplateController extends Controller
                     'feature_contactless as featureContactless',
                     'fallback_enabled as fallbackEnabled',
                     'random_pin_keypad as randomPinKeypad',
+                    'beep_pin_keypad as beepPinKeypad',
                     'next_logon as nextLogon',
                     'auto_logon as autoLogon',
-                    'push_logon as pushLogon',
+                    'push_logon as pushLogon', 
                     'qris_count_down as qrisCountDown',
                     'reprint_online_retry as reprintOnlineRetry',
                     'settle_warning_trx_count as settlementWarningTrxCount',
@@ -462,7 +462,7 @@ class TemplateController extends Controller
                     'brizzi_discount_amount as brizziDiscountAmount',
                     'installment1_options as installment1Options',
                     'installment2_options as installment2Options',
-                    'installment3_options as installment3Options'
+                    'installment3_options as installment3Options',
                     'version',
                     'created_by as createdBy',
                     'create_ts as createdTime',
@@ -476,9 +476,28 @@ class TemplateController extends Controller
             if($ta->count()>0)
             {
                
+                 $tass = $ta->map(function ($item) {
+                    //
+                    $g = DB::table('tmsext_template_acquirer_link')->where('template_id',$item->id)
+                    ->join('tmsext_acquirer', 'tmsext_template_acquirer_link.acquirer_id', '=', 'tmsext_acquirer.id')->get();
+                    $d = array();
+                    foreach($g as $c)
+                    {
+                        $d[]= array('id'=>$c->id,
+                                            'name'=>$c->name,
+                                            'description'=>$c->description,
+                                            'type'=>$c->acquirer_type,
+                                            'acquirerId' => $c->acquirer_id
+                                        );
+                    }    
+                    $item['acquirer'] = $d;
+                    return $item;
+
+                    });
+
                 $a=["responseCode"=>"0000",
                     "responseDesc"=>"OK",
-                     "data" => $ta
+                     "data" => $tass
                     ];    
                 return $this->headerResponse($a,$request);
             }
