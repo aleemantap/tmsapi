@@ -33,7 +33,7 @@ class IssuerController extends Controller
 
                 if($request->name != '')
                 {
-                    $query->where('tmsext_acquirer.name', 'ILIKE', '%' . $request->name . '%');
+                    $query->where('tmsext_issuer.name', 'ILIKE', '%' . $request->name . '%');
                 }
 
                 if($request->onUs != '')

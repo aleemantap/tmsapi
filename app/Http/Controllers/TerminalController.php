@@ -33,7 +33,12 @@ class TerminalController extends Controller
                     ->join('tms_device_model', 'tms_terminal.model_id', '=', 'tms_device_model.id')
                     ->join('tms_merchant', 'tms_terminal.merchant_id', '=', 'tms_merchant.id')
                     ->join('tms_device_profile', 'tms_terminal.profile_id', '=', 'tms_device_profile.id')
-                ->whereNull('tms_terminal.deleted_by');
+                 ->where('tms_terminal.tenant_id',$request->header('Tenant-id'))
+                 ->where(function(\Illuminate\Database\Eloquent\Builder $query) {
+                        $query->where('tms_terminal.deleted_by', '')->orWhereNull('tms_terminal.deleted_by');
+                  });
+
+
 
                  
                 if($request->modelId != '')
@@ -44,9 +49,10 @@ class TerminalController extends Controller
                 {
                     $query->where('merchant_id', 'ILIKE', '%' . $request->merchantId . '%');
                 }
-                if($request->sn != '')
+                if($request->sn !== '')
                 {
-                    $query->where('sn', 'ILIKE', '%' . $request->sn . '%');
+                     $query->where('sn', 'ILIKE', '%' . $request->sn . '%');
+                    //
                 }
                 if($request->profileId != '')
                 {
@@ -54,7 +60,8 @@ class TerminalController extends Controller
                 }
                 if($request->terminalId != '')
                 {
-                    $query->where('id', 'ILIKE', '%' . $request->terminalId . '%');
+                    $query->where('tms_terminal.id', 'ILIKE', '%' . $request->terminalId . '%');
+                    //$query->where("tms_terminal.id", "ef794ebc-ad89-da5f-ce5a-175990f5d2f7");
                 }
                 
                 

@@ -21,7 +21,8 @@ class MerchantTypeController extends Controller
                 
                 if($request->name != '')
                 {
-                    $query->where('name', $request->name);
+                   
+                    $query->where('name', 'ILIKE', '%' . $request->name . '%');
                 }
 
                 $count = $query->get()->count();

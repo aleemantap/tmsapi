@@ -170,6 +170,8 @@ Route::middleware('HeaderAccess')->group(function($router){
         /* router  Diagnostic */
         $router->get('/diagnostic/lastHeartbeat', [DiagnosticController::class,'lastHeartbeat']);
         $router->get('/diagnostic/lastDiagnostic', [DiagnosticController::class,'lastDiagnostic']);
+        $router->get('/diagnostic/lastDiagnosticExport', [DiagnosticController::class,'lastDiagnosticExport']);
+        $router->get('/diagnostic/lastHeartbeatExport', [DiagnosticController::class,'lastHeartbeatExport']);
 
         
         /* router tenant */
