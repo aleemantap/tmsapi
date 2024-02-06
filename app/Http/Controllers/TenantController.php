@@ -38,6 +38,18 @@ class TenantController extends Controller
                 
                 $query->where('name', 'ILIKE', '%' . $request->name . '%');
             }
+
+            if($request->is_super != '')
+            {
+                
+                $query->where('is_super',  $request->is_super);
+            }
+
+            // if($request->super_tenant_id !== '')
+            // {
+                
+            //     $query->where('super_tenant_id',  $request->super_tenant_id);
+            // }
             
             $count = $query->get()->count();
 

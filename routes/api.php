@@ -264,7 +264,10 @@ Route::middleware('HeaderAccess')->group(function($router){
 
 });
 
-/* router tenant */
+/* router tenant (not in HeaderAccess Scope) 
+accessing only as administrator user management in front end.
+Modified by Ali
+ */
 Route::get('/v1/tenant/list', [TenantController::class,'list']);
 Route::get('/v1/tenant/get', [TenantController::class,'show']);
 Route::post('/v1/tenant/add', [TenantController::class,'create']);
