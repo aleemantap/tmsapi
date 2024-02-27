@@ -309,7 +309,7 @@ class TerminalController extends Controller
            
 
 
-            ->where('id', $request->id) //->whereNull('deleted_by');
+            ->where('id', $request->id)
             ->where(function(\Illuminate\Database\Eloquent\Builder $query) {
                         $query->where('tms_terminal.deleted_by', '')->orWhereNull('tms_terminal.deleted_by');
                   });
