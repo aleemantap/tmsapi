@@ -309,8 +309,11 @@ class TerminalController extends Controller
            
 
 
-            ->where('id', $request->id)->whereNull('deleted_by');
-            
+            ->where('id', $request->id) //->whereNull('deleted_by');
+            ->where(function(\Illuminate\Database\Eloquent\Builder $query) {
+                        $query->where('tms_terminal.deleted_by', '')->orWhereNull('tms_terminal.deleted_by');
+                  });
+
             
             if($t->get()->count()>0)
             {
@@ -321,7 +324,7 @@ class TerminalController extends Controller
                  }, 'profile' => function($query){
                     $query->select('id', 'name');
                 }])->get()->makeHidden(['deleted_by', 'delete_ts','model_id','profile_id','merchant_id']);
-                //$t =  $t->get()->makeHidden(['deleted_by', 'delete_ts']);
+                
                 
                 $a=["responseCode"=>"0000",
                     "responseDesc"=>"OK",
