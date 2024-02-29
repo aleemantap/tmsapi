@@ -219,7 +219,10 @@ class TerminalController extends Controller
                 ['tenant_id',$request->header('Tenant-id')]
                
             ])
-            ->whereNull('deleted_by')->first();
+             ->where(function(\Illuminate\Database\Eloquent\Builder $query) {
+                         $query->where('tms_terminal.deleted_by', '')->orWhereNull('tms_terminal.deleted_by');
+                   })->first();
+            
 
             if($t->get()->count()==0){
                 $a=["responseCode"=>"0400",
@@ -323,8 +326,24 @@ class TerminalController extends Controller
                     $query->select('id', 'name');
                  }, 'profile' => function($query){
                     $query->select('id', 'name');
-                }])->get()->makeHidden(['deleted_by', 'delete_ts','model_id','profile_id','merchant_id']);
-                
+                }]);
+               
+                $t  = $t->get()->makeHidden(['deleted_by', 'delete_ts','model_id','profile_id','merchant_id']);
+               
+                $t = $t->map(function ($item) {
+                    //
+                    $g = DB::table('tms_terminal_group_link')->where('terminal_id',$item->id)
+                    ->get();
+                    $d = array();
+                    foreach($g as $c)
+                    {
+                        $d[]= array('id'=>$c->terminal_group_id);
+                    }    
+                    $item['terminalGroup'] = $d;
+                    return $item;
+
+                    });
+
                 
                 $a=["responseCode"=>"0000",
                     "responseDesc"=>"OK",
@@ -357,13 +376,15 @@ class TerminalController extends Controller
     public function delete(Request $request){
         DB::beginTransaction();
         try {
-            $t= DB::table('tms_terminal')
+            $t= Terminal::query() 
             ->where([
                 ['id',$request->id],
                 ['version', $request->version],
                 ['tenant_id',$request->header('Tenant-id')]
             ])
-            ->whereNull('deleted_by');
+             ->where(function(\Illuminate\Database\Eloquent\Builder $query) {
+                        $query->where('deleted_by', '')->orWhereNull('deleted_by');
+                  });
              $cn = $t->get()->count();
              if( $cn > 0)
              {
