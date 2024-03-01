@@ -327,19 +327,20 @@ class TerminalController extends Controller
                  }, 'profile' => function($query){
                     $query->select('id', 'name');
                 }]);
-               
+
+              
                 $t  = $t->get()->makeHidden(['deleted_by', 'delete_ts','model_id','profile_id','merchant_id']);
                
                 $t = $t->map(function ($item) {
-                    //
-                    $g = DB::table('tms_terminal_group_link')->where('terminal_id',$item->id)
+                    
+                    $g = DB::table('tms_terminal_group_link')->select('tms_terminal_group.id','tms_terminal_group.name')->join('tms_terminal_group','tms_terminal_group.id','=','tms_terminal_group_link.terminal_group_id')->where('tms_terminal_group_link.terminal_id',$item->id)
                     ->get();
                     $d = array();
                     foreach($g as $c)
                     {
-                        $d[]= array('id'=>$c->terminal_group_id);
+                        $d[]= array('id'=>$c->id,'name'=>$c->name);
                     }    
-                    $item['terminalGroup'] = $d;
+                    $item['terminalGroups'] = $d;
                     return $item;
 
                     });

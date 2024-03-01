@@ -30,14 +30,14 @@ class Terminal extends Model
     public function TerminalGroupLink()
     {
         return $this->belongsTo('App\Models\TerminalGroupLink', 'terminal_id', 'terminal_group_id');
-       //return $this->belongsTo('App\Models\State');
+      
 
     }
 
     public function model()
     {
         return $this->belongsTo('App\Models\DeviceModel', 'model_id', 'id');
-       //return $this->belongsTo('App\Models\State');
+       
     }
     
     /**
@@ -47,13 +47,13 @@ class Terminal extends Model
     public function Merchant()
     {
         return $this->belongsTo('App\Models\Merchant', 'merchant_id', 'id');
-       //return $this->belongsTo('App\Models\State');
+       
     }
     
     public function profile()
     {
         return $this->belongsTo('App\Models\DeviceProfile', 'profile_id', 'id');
-       //return $this->belongsTo('App\Models\State');
+      
     }
 
     /**
@@ -67,7 +67,7 @@ class Terminal extends Model
 
     public function lastHeartBeat()
     {
-        //return $this->belongsTo('App\Models\LastHeartbeat');
+        
         return $this->belongsToMany(Heartbeat::class, 'tms_last_heartbeat');
     }
 
