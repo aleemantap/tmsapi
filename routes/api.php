@@ -175,11 +175,11 @@ Route::middleware('HeaderAccess')->group(function($router){
 
         
         /* router tenant */
-        $router->get('/tenant/list', [TenantController::class,'list']);
-        $router->get('/tenant/get', [TenantController::class,'show']);
-        $router->post('/tenant/add', [TenantController::class,'create']);
-        $router->post('/tenant/update', [TenantController::class,'update']);
-        $router->post('/tenant/delete', [TenantController::class,'delete']);
+        // $router->get('/tenant/list', [TenantController::class,'list']);
+        // $router->get('/tenant/get', [TenantController::class,'show']);
+        // $router->post('/tenant/add', [TenantController::class,'create']);
+        // $router->post('/tenant/update', [TenantController::class,'update']);
+        // $router->post('/tenant/delete', [TenantController::class,'delete']);
 
         /* router aid*/ 
         $router->get('/aid/list', [AidController::class,'list']);

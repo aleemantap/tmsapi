@@ -20,29 +20,39 @@ class TenantController extends Controller
             $pageNum = ($request->pageNum)?$request->pageNum:1;
           
             
-            $query = Tenant::select(
-                    'id',
-                    'name',
-                    'version',
-                    'super_tenant_id',
-                    'is_super',
-                    'created_by as createdBy', 
-                    'create_ts as createdTime', 
-                    'updated_by as lastUpdatedBy', 
-                    'update_ts as lastUpdatedTime'
+            $query = DB::table('tms_tenant AS a') //Tenant::query()
+            ->leftjoin('tms_tenant as b','a.super_tenant_id','=','b.id')
+            ->select(
+                    'a.id',
+                    'a.name',
+                    'a.version',
+                    'a.super_tenant_id',
+                    'a.is_super',
+                    'b.name as tenantSuper',
+                    'a.created_by as createdBy', 
+                    'a.create_ts as createdTime', 
+                    'a.updated_by as lastUpdatedBy', 
+                    'a.update_ts as lastUpdatedTime'
+                    
                     )
-            ->whereNull('deleted_by');
+            ->whereNull('a.deleted_by');
            
             if($request->name != '')
             {
                 
-                $query->where('name', 'ILIKE', '%' . $request->name . '%');
+                $query->where('a.name', 'ILIKE', '%' . $request->name . '%');
             }
 
             if($request->is_super != '')
             {
                 
-                $query->where('is_super',  $request->is_super);
+                $query->where('a.is_super',  $request->is_super);
+            }
+
+            if($request->id != '')
+            {
+                
+                $query->where('a.id',  $request->id);
             }
 
             // if($request->super_tenant_id !== '')
@@ -54,7 +64,7 @@ class TenantController extends Controller
             $count = $query->get()->count();
 
             $results = $query->offset(($pageNum-1) * $pageSize) 
-            ->limit($pageSize)->orderBy('create_ts', 'DESC')->get();
+            ->limit($pageSize)->orderBy('a.create_ts', 'DESC')->get();
             
             if( $count  > 0)
                 {
