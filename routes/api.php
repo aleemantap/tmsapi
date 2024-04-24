@@ -152,7 +152,7 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->post('/downloadTask/update',  [DownloadTaskController::class,'update']);
         $router->post('/downloadTask/delete',  [DownloadTaskController::class,'delete']);
         $router->post('/downloadTask/cancel',  [DownloadTaskController::class,'cancel']);
-        $router->post('/downloadTask/history',  [DownloadTaskController::class,'history']);
+        $router->get('/downloadTask/history',  [DownloadTaskController::class,'history']);
         $router->post('/downloadTask/terminalHistory',  [DownloadTaskController::class,'terminalHistory']);
     
         /* router delete task*/ 
