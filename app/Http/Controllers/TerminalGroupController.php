@@ -34,15 +34,16 @@ class TerminalGroupController extends Controller
                     'tms_terminal_group.update_ts as lastUpdatedTime'
                 )
                 ->where('tms_terminal_group.tenant_id',$request->header('Tenant-id'))
+                ->where('tms_terminal_group.id',$request->id)
                 ->Join('tms_terminal_group_link', 'tms_terminal_group_link.terminal_group_id', '=', 'tms_terminal_group.id')
                 ->Join('tms_terminal', 'tms_terminal.id', '=', 'tms_terminal_group_link.terminal_id')
                 ->whereNull('tms_terminal_group.deleted_by');
+                
+                //if($request->id != '')
+                //{
+                    //$query->where('tms_terminal_group.id', 'ILIKE', '%' . $request->id . '%');
 
-                 
-                if($request->id != '')
-                {
-                    $query->where('tms_terminal_group.id', 'ILIKE', '%' . $request->id . '%');
-                }
+                //}
 
                 if($request->name != '')
                 {

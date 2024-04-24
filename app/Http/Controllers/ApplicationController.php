@@ -39,8 +39,8 @@ class ApplicationController extends Controller
                     'updated_by as lastUpdatedBy',
                     'update_ts as lastUpdatedTime',
                     'icon_url_exp'
-                )
-                ->addSelect(['deviceModelName' => DeviceModel::select('model')->whereColumn('id', 'tms_v_application.device_model_id')]);
+                );
+                //->addSelect(['deviceModelName' => DeviceModel::select('model')->whereColumn('id', 'tms_v_application.device_model_id')]);
                 
                 
                 if($request->deviceModelId != '')
@@ -110,6 +110,22 @@ class ApplicationController extends Controller
                                 ->limit(1)->update( [ 'icon_url_exp' => $expired,'icon_url'=>$url]);
                         }
 
+                        $df = DB::table('tms_device_model_application_link')
+                        ->join('tms_device_model','tms_device_model.id','=','tms_device_model_application_link.device_model_id')
+                        ->where('tms_device_model_application_link.application_id',$data['id'])->select('tms_device_model.id','tms_device_model.model')->get();
+
+                        // $model=[];
+                        // foreach ($df as $key) {
+                            
+                        //     array_push($model,array('id'=>$key->id,'modelName'=>$key->model));
+                        // }
+
+                        $model=[];
+                        foreach ($df as $key) {
+                            $model[] = $key->model;     
+                        }
+
+                        $modelName = implode(",",$model);
 
                         $d = [];
                         $d['id']              = $data['id']; 
@@ -120,13 +136,14 @@ class ApplicationController extends Controller
                         $d['uninstallable'] = $data['uninstallable'];
                         $d['companyName'] =  $data['companyName'];
                         $d['iconUrl'] =   $url;
-            $d['fileSize'] = $data['fileSize'];
+                        $d['fileSize'] = $data['fileSize'];
                         $d['version'] =  $data['version'];
+                        $d['deviceModel'] =($model) ? $modelName : '';// $data['deviceModelName'];
                         $d['createdBy'] =  $data['createdBy'];
                         $d['createdTime'] =  $data['createdTime'];
-                        $d['lastUpdatedBy'] =  $data['lastUpdatedBy'];
+                        $d['lastUpdatedBy'] =  $data['lastUpdatedBy']; 
                         $d['lastUpdatedTime'] =  $data['lastUpdatedTime'];
-                    
+                       
                         return $d;
                     
                     });
@@ -233,18 +250,32 @@ class ApplicationController extends Controller
             $app->description = $request->description;
             $app->uninstallable = $request->uninstallable;
             $app->company_name = $request->companyName;
+            
             $app->checksum = MD5($request->file('apk'));
             $app->file_size = $request->file('apk')->getSize();
             $app->unique_name = substr($path2,5); 
             $app->unique_icon_name =substr($path,6);
             $app->icon_url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(10075));
-            //$url = 
+            
             $app->tenant_id = $request->header('tenant-id');
-            $app->device_model_id = $request->deviceModelId;
+            //$app->device_model_id = $request->deviceModelId;
             $app->icon_url_exp = \Carbon\Carbon::now()->addMinutes(10075);
             $this->saveAction($request,$app);
-        
+            
             if ($app->save()) {
+                
+                 $dataapp = [];
+                 if($request->deviceModelId)
+                 {
+                   
+                    $dev = explode(',', $request->deviceModelId);
+                    foreach($dev as $d)
+                    {
+                        $dataapp[] = ['device_model_id' => $d, 'application_id' => $app->id];
+                    }
+                    DB::table('tms_device_model_application_link')->insert($dataapp);
+                  }
+
                 DB::commit();
                 $a  =   [   
                     "responseCode"=>"0000",
@@ -300,7 +331,7 @@ class ApplicationController extends Controller
             'uninstallable'=>  ['required', Rule::in(['true', 'false','TRUE','FALSE','True','False','1','0'])],  
             'companyName'=>  'required|max:100', 
             'deviceModelId' => 'required', 
-            'icon' => 'image|mimes:jpeg,png,jpg,gif,svg|nullable',
+            //'icon' => 'image|mimes:jpeg,png,jpg,gif,svg|nullable',
         'apk' => 'max:51200',
           
         ]);
@@ -369,17 +400,39 @@ class ApplicationController extends Controller
                     $app->uninstallable = $request->uninstallable;
                     $app->company_name = $request->companyName;
                     $app->checksum = MD5($request->file('apk'));
-                    //$app->unique_name = $path2; //apk
-                    //$app->unique_icon_name = $path;
-                    $app->unique_name = substr($path2,5); 
-                    $app->unique_icon_name =substr($path,6);
-                  
-                    $app->icon_url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(10075));
+                    if($request->file('apk')){
+                         $app->unique_name = substr($path2,5); 
+                    }
+
+                    if($request->file('icon'))
+                    {
+                        $app->unique_icon_name =substr($path,6);
+                        $app->icon_url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(10075));
+                    }
+                   
+                    
                     $app->tenant_id = $request->header('tenant-id');
-                    $app->device_model_id = $request->deviceModelId;
+                    //$app->device_model_id = $request->deviceModelId;
                     $this->updateAction($request, $app); 
                 
                     if ($app->save()) {
+
+                         DB::table('tms_device_model_application_link')
+                         ->where('application_id',$request->id)
+                         ->delete();
+
+                         $dataapp = [];
+                         if($request->deviceModelId)
+                         {
+                           
+                            $dev = explode(',', $request->deviceModelId);
+                            foreach($dev as $d)
+                            {
+                                $dataapp[] = ['device_model_id' => $d, 'application_id' => $app->id];
+                            }
+                            DB::table('tms_device_model_application_link')->insert($dataapp);
+                          }
+
                         DB::commit();
                         $a  =   [   
                             "responseCode"=>"0000",
@@ -439,7 +492,6 @@ class ApplicationController extends Controller
             if($app->get()->count()>0)
             {
                 $app =  $app->get()->makeHidden(['deleted_by', 'delete_ts']);
-                
               
                 $dtime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $app[0]['icon_url_exp']);
 
@@ -465,6 +517,16 @@ class ApplicationController extends Controller
                     $update = DB::table('tms_application') ->where('id', $app[0]['id'])
                     ->limit(1)->update( [ 'icon_url_exp' => $expired,'icon_url'=>$urlIcon]);
                 }
+
+            $df = DB::table('tms_device_model_application_link')
+                        ->join('tms_device_model','tms_device_model.id','=','tms_device_model_application_link.device_model_id')
+                        ->where('tms_device_model_application_link.application_id',$app[0]['id'])->select('tms_device_model.id','tms_device_model.model')->get();
+
+                        $model=[];
+                        foreach ($df as $key) {
+                            
+                            array_push($model,array('id'=>$key->id,'modelName'=>$key->model));
+                        }
                 
          $jsonr =[
                     "id" => $app[0]['id'],
@@ -475,7 +537,8 @@ class ApplicationController extends Controller
                     "uninstallable" => $app[0]['uninstallable'],
                     "companyName" => $app[0]['company_name'],
                     "iconUrl"  => $urlIcon,
-                    "deviceModel" => $app[0]['deviceModel'],
+                    //"deviceModel" => $app[0]['deviceModel'],
+                    "deviceModel" => ($model) ? $model : '',
                     "version" => $app[0]['version'],
                     "createdBy"=> $app[0]['created_by'],
                     "createdTime" => $app[0]['create_ts'],
@@ -523,6 +586,11 @@ class ApplicationController extends Controller
                
                 $re = $this->deleteAction($request, $m);
                 if ($re) {
+
+                    DB::table('tms_device_model_application_link')
+                         ->where('application_id','=',$request->id)
+                         ->delete();
+
                     DB::commit();
                       $a  =   [   
                         "responseCode"=>"0000",
