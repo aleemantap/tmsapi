@@ -34,9 +34,9 @@ class TerminalGroupController extends Controller
                     'tms_terminal_group.update_ts as lastUpdatedTime'
                 )
                 ->where('tms_terminal_group.tenant_id',$request->header('Tenant-id'))
-                ->where('tms_terminal_group.id',$request->id)
                 ->Join('tms_terminal_group_link', 'tms_terminal_group_link.terminal_group_id', '=', 'tms_terminal_group.id')
                 ->Join('tms_terminal', 'tms_terminal.id', '=', 'tms_terminal_group_link.terminal_id')
+                ->where('tms_terminal_group.id','=',$request->id)
                 ->whereNull('tms_terminal_group.deleted_by');
                 
                 //if($request->id != '')
@@ -45,21 +45,21 @@ class TerminalGroupController extends Controller
 
                 //}
 
-                if($request->name != '')
-                {
-                    $query->where('tms_terminal_group.name', 'ILIKE', '%' . $request->name . '%');
-                }
+                // if($request->name != '')
+                // {
+                //     $query->where('tms_terminal_group.name', 'ILIKE', '%' . $request->name . '%');
+                // }
                  
                 if($request->sn != '')
                 {
                     $query->whereIn('tms_terminal_group.id', TerminalGroupLink::select('terminal_group_id')->whereIn('terminal_id', Terminal::select('id')->where('sn', 'ILIKE', '%' . $request->sn . '%'))->groupBy('terminal_group_id')); //'Terminal::whereIn('id',$request->sn)
                 }
 
-                if($request->terminalId != '')
-                {
-                    $query->whereIn('tms_terminal_group.id', TerminalGroupLink::select('terminal_group_id')->where('terminal_id',$request->terminalId));
+                // if($request->terminalId != '')
+                // {
+                //     $query->whereIn('tms_terminal_group.id', TerminalGroupLink::select('terminal_group_id')->where('terminal_id',$request->terminalId));
                     
-                }
+                // }
                
                 $count = $query->get()->count();
             
