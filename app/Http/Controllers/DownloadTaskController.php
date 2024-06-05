@@ -35,8 +35,7 @@ class DownloadTaskController extends Controller
                     'tms_download_task.created_by as createdBy',
                     'tms_download_task.create_ts as createdTime',
                     'tms_download_task.updated_by as lastUpdatedBy',
-                    'tms_download_task.update_ts as lastUpdatedTime',
-                    //'tms_download_task_terminal_link.terminal_id'
+                    'tms_download_task.update_ts as lastUpdatedTime'
                 )
                 ->where('tms_download_task.tenant_id',$request->header('Tenant-id'))
                 ->whereNull('tms_download_task.deleted_by');

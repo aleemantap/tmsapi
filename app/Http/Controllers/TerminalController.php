@@ -392,8 +392,8 @@ class TerminalController extends Controller
 
               
                 $this->deleteAction($request,$t);
-
                 TerminalGroupLink::where('terminal_id', $request->id)->delete();
+                //DB::table('tms_last_heartbeat')->where('terminal_sn',$request->sn)->delete();
                 DB::commit();
                     $a  =   [   
                         "responseCode"=>"0000",

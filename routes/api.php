@@ -28,6 +28,7 @@ use App\http\Controllers\AcquirerController;
 use App\http\Controllers\IssuerController;
 use App\http\Controllers\ResponseCodeController;
 use App\http\Controllers\TemplateController;
+use App\http\Controllers\ImportTerminalController;
 
 
 
@@ -240,7 +241,6 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->get('/card/get', [CardController::class,'show']);
         $router->post('/card/linkUnlink', [CardController::class,'linkUnlink']); //L
 
-
         /* router template*/ 
         $router->post('/template/add', [TemplateController::class,'add']);
         $router->post('/template/update', [TemplateController::class,'update']);
@@ -250,14 +250,18 @@ Route::middleware('HeaderAccess')->group(function($router){
         $router->get('/template/listAcquirer', [TemplateController::class,'listAcquirer']);
         
 
-         /* router response Code*/ 
+        /* router response Code*/ 
         $router->post('/responseCode/add', [ResponseCodeController::class,'add']);
         $router->post('/responseCode/update', [ResponseCodeController::class,'update']);
         $router->post('/responseCode/delete', [ResponseCodeController::class,'delete']);
         $router->get('/responseCode/list', [ResponseCodeController::class,'list']);
         $router->get('/responseCode/get', [ResponseCodeController::class,'show']);
+      
+        /*router proses import excel terminal*/ 
+        $router->post('/importTerminalCek/importCek', [ImportTerminalController::class,'importCek']);
+        $router->post('/importTerminalBatch/importBatch', [ImportTerminalController::class,'importBatch']);
         
-    
+
     });
     
 
