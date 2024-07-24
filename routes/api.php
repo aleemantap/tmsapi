@@ -18,17 +18,17 @@ use App\Http\Controllers\DownloadTaskController;
 use App\Http\Controllers\DeleteTaskController;
 use App\Http\Controllers\DiagnosticController;
 use App\Http\Controllers\TenantController;
-use App\http\Controllers\AidController;
-use App\http\Controllers\CapkController;
-use App\http\Controllers\PublicKeyController;
-use App\http\Controllers\TleSettingController;
-use App\http\Controllers\TerminalExtController;
-use App\http\Controllers\CardController;
-use App\http\Controllers\AcquirerController;
-use App\http\Controllers\IssuerController;
-use App\http\Controllers\ResponseCodeController;
-use App\http\Controllers\TemplateController;
-use App\http\Controllers\ImportTerminalController;
+use App\Http\Controllers\AidController;
+use App\Http\Controllers\CapkController;
+use App\Http\Controllers\PublicKeyController;
+use App\Http\Controllers\TleSettingController;
+use App\Http\Controllers\TerminalExtController;
+use App\Http\Controllers\CardController;
+use App\Http\Controllers\AcquirerController;
+use App\Http\Controllers\IssuerController;
+use App\Http\Controllers\ResponseCodeController;
+use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\ImportTerminalController;
 
 
 
@@ -183,7 +183,7 @@ Route::middleware('HeaderAccess')->group(function($router){
         // $router->post('/tenant/delete', [TenantController::class,'delete']);
 
         /* router aid*/ 
-        $router->get('/aid/list', [AidController::class,'list']);
+        $router->get('/aid/list', [s::class,'list']);
         $router->post('/aid/add', [AidController::class,'add']);
         $router->post('/aid/update', [AidController::class,'update']);
         $router->post('/aid/delete', [AidController::class,'delete']);
