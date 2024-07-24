@@ -183,7 +183,7 @@ Route::middleware('HeaderAccess')->group(function($router){
         // $router->post('/tenant/delete', [TenantController::class,'delete']);
 
         /* router aid*/ 
-        $router->get('/aid/list', [s::class,'list']);
+        $router->get('/aid/list', [AidController::class,'list']);
         $router->post('/aid/add', [AidController::class,'add']);
         $router->post('/aid/update', [AidController::class,'update']);
         $router->post('/aid/delete', [AidController::class,'delete']);
