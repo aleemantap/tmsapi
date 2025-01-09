@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+use App\Models\DeviceModelApplicationLink;
+
 
 class ApplicationController extends Controller
 {
@@ -45,7 +47,12 @@ class ApplicationController extends Controller
                 
                 if($request->deviceModelId != '')
                 {
-                    $query->where('device_model_id',$request->deviceModelId);
+                   
+                    $device_model_id = $request->deviceModelId;
+                    $query->whereHas('applicationDeviceModel', function($q) use($device_model_id) {
+                             $q->where('device_model_id', $device_model_id);
+                    });
+              
                 }
                 
                 if($request->name != '')
@@ -257,7 +264,7 @@ class ApplicationController extends Controller
             $app->unique_icon_name =substr($path,6);
             $app->icon_url = \Storage::cloud()->temporaryUrl($path,\Carbon\Carbon::now()->addMinutes(10075));
             
-            $app->tenant_id = $request->header('tenant-id');
+            $app->tenant_id = $request->header('Tenant-id');
             //$app->device_model_id = $request->deviceModelId;
             $app->icon_url_exp = \Carbon\Carbon::now()->addMinutes(10075);
             $this->saveAction($request,$app);
@@ -411,7 +418,7 @@ class ApplicationController extends Controller
                     }
                    
                     
-                    $app->tenant_id = $request->header('tenant-id');
+                    $app->tenant_id = $request->header('Tenant-id');
                     //$app->device_model_id = $request->deviceModelId;
                     $this->updateAction($request, $app); 
                 
