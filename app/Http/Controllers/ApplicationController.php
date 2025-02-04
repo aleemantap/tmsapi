@@ -60,7 +60,7 @@ class ApplicationController extends Controller
                     $query->where('name', 'ILIKE','%'.$request->name.'%');
                 }
         
-         if($request->sn != '')
+                if($request->sn != '')
                 {
                     $q = Terminal::select('model_id')->where('sn',$request->sn);
                     $cnt = $q->get()->count();
