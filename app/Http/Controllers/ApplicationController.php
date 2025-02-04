@@ -65,8 +65,11 @@ class ApplicationController extends Controller
                     $q = Terminal::select('model_id')->where('sn',$request->sn);
                     $cnt = $q->get()->count();
                     if($cnt>0){
-
-                        $query->where('device_model_id', $q->get()[0]->model_id);
+  
+                        $device_model_id = $q->get()[0]->model_id;
+                        $query->whereHas('applicationDeviceModel', function($q) use($device_model_id) {
+                             $q->where('device_model_id', $device_model_id);
+                        });
                     }
                    
                 }       
