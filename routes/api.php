@@ -29,6 +29,7 @@ use App\Http\Controllers\IssuerController;
 use App\Http\Controllers\ResponseCodeController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\ImportTerminalController;
+use App\Http\Controllers\TerminalDashboardController;
 
 
 
@@ -260,7 +261,9 @@ Route::middleware('HeaderAccess')->group(function($router){
         /*router proses import excel terminal*/ 
         $router->post('/importTerminalCek/importCek', [ImportTerminalController::class,'importCek']);
         $router->post('/importTerminalBatch/importBatch', [ImportTerminalController::class,'importBatch']);
-        
+
+        /* router report dashboard terminal online offline */
+        $router->get('/dashboard/terminal', [TerminalDashboardController::class,'terminalOnline']);
 
     });
     
