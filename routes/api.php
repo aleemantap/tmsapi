@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\FileController;
+// use App\Http\Controllers\FileController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\StateController;
 use App\Http\Controllers\CityController;
@@ -52,11 +52,11 @@ Route::middleware('HeaderAccess')->group(function($router){
    
     $router->group(['prefix' => 'v1'], function () use ($router) {
         /*buat tes  aja  */
-        $router->post('/file/add',[FileController::class, 'store']);
-        $router->get('/file/get',[FileController::class, 'show']);
-        $router->get('/file/export',[FileController::class, 'export']);
-        $router->get('/file/download/{file}',[FileController::class,'download']);
-        $router->get('/file/status-export/{file}',[FileController::class,'statusExport']);
+        // $router->post('/file/add',[FileController::class, 'store']);
+        // $router->get('/file/get',[FileController::class, 'show']);
+        // $router->get('/file/export',[FileController::class, 'export']);
+        // $router->get('/file/download/{file}',[FileController::class,'download']);
+        // $router->get('/file/status-export/{file}',[FileController::class,'statusExport']);
         /** end tes */
     
         /* router country */

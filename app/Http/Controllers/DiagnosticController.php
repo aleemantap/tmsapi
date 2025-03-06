@@ -41,6 +41,7 @@ class DiagnosticController extends Controller
                 'battery_percentage as batteryPercentage',
                 'latitude',
                 'longitude',
+                'status',
                 'cell_name as cellName',
                 'cell_type as cellType',
                 'cell_strength as cellStrength',
